@@ -32,7 +32,7 @@ jobs:
           Invoke-WebRequest https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip -OutFile work/package-v2/python-3.12.10-embed-amd64.zip
           if ((Get-FileHash work/package-v2/python-3.12.10-embed-amd64.zip).Hash -ne '4ACBED6DD1C744B0376E3B1CF57CE906F9DC9E95E68824584C8099A63025A3C3') { throw 'Python archive mismatch' }
           Invoke-WebRequest https://api.nuget.org/v3-flatcontainer/microsoft.web.webview2/1.0.2903.40/microsoft.web.webview2.1.0.2903.40.nupkg -OutFile work/desktop-build/webview2.nupkg
-          Invoke-WebRequest https://files.jrsoftware.org/is/6/innosetup-6.4.3.exe -OutFile work/desktop-build/inno.exe
+          Invoke-WebRequest https://github.com/jrsoftware/issrc/releases/download/is-6_4_3/innosetup-6.4.3.exe -OutFile work/desktop-build/inno.exe
           if ((Get-FileHash work/desktop-build/inno.exe).Hash -ne 'F3C42116542C4CC57263C5BA6C4FEABFC49FE771F2F98A79D2F7628B8762723B') { throw 'Inno archive mismatch' }
           $folder=Join-Path $pwd 'work/desktop-build/inno643'
           Start-Process work/desktop-build/inno.exe -WindowStyle Hidden -Wait -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',('/DIR="'+$folder+'"'))
