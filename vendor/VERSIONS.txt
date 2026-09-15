@@ -1,0 +1,6 @@
+Offline Office preview dependencies (no CDN at runtime)
+docx-preview 0.3.6 — https://registry.npmjs.org/docx-preview/-/docx-preview-0.3.6.tgz — Apache-2.0, docx-preview-LICENSE.txt
+JSZip 3.10.1 — https://registry.npmjs.org/jszip/-/jszip-3.10.1.tgz — MIT or GPLv3, selected MIT, jszip-LICENSE.txt
+SheetJS CE xlsx 0.18.5 — https://registry.npmjs.org/xlsx/-/xlsx-0.18.5.tgz — Apache-2.0, xlsx-LICENSE.txt
+PDF.js 3.11.174 — https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-3.11.174.tgz — Apache-2.0, pdfjs-LICENSE.txt
+PDF.js isEvalSupported is disabled. The reader runs in an opaque-origin sandbox with network connections disabled. Office preview is read-only.

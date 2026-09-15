@@ -1,0 +1,32 @@
+# Local configuration, credentials and workspace content
+config.json
+oauth-config.*
+.env
+.env.*
+!.env.example
+data/
+workspace/
+browser/
+runtime/
+*.pem
+*.p12
+*.pfx
+*.key
+
+# Runtime and build output
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+outputs/
+work/
+*.log
+*.exe
+*.zip
+
+# Local execution notes and one-off upgrade scripts
+task_plan.md
+findings.md
+progress.md
+UI-3.0-验收记录.md
+upgrade_office.py

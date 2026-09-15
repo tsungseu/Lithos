@@ -1,0 +1,11 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const memory=new Map(),context=vm.createContext({URL,crypto:require('node:crypto').webcrypto,localStorage:{getItem:k=>memory.get(k)||null,setItem:(k,v)=>memory.set(k,v)}});
+vm.runInContext(fs.readFileSync(__dirname+'/storage.js','utf8')+'\nglobalThis.store=WorkbenchStore;',context);const store=context.store;
+memory.set('knowledge-provider',JSON.stringify({endpoint:'http://127.0.0.1:8317/v1',model:'existing-model',key:'local-key'}));
+let data=store.load();assert.equal(data.providers[0].model,'existing-model');assert.equal(data.activeId,'migrated');assert.equal(data.providers[0].apiKey,'local-key');
+data=store.normalize({providers:[{id:'a',name:'Demo',baseUrl:'https://example.org/v1',apiKey:'persist-locally',models:[{modelId:'one',name:'One',contextWindow:128000},'one','two'],model:'missing',effort:'high'}],activeId:'bad'});
+assert.equal(data.providers[0].models.length,2);assert.equal(data.providers[0].models[0].contextWindow,128000);assert.equal(data.providers[0].model,'one');assert.equal(data.providers[0].effort,'high');assert.equal(data.activeId,'a');store.save(data);assert(memory.get(store.key).includes('persist-locally'));
+assert.throws(()=>store.endpoint('http://example.org'));assert.throws(()=>store.endpoint('https://example.org/v1?key=oops'));assert.throws(()=>store.endpoint('https://example.org/v1/chat/completions'));
+data.providers=[];assert.equal(store.save(data).activeId,'');
+memory.set(store.key,'broken JSON');assert.equal(store.load().providers.length,0);
+console.log('PASS: local key persistence, legacy migration, model metadata, effort, validation and corrupt storage recovery.');
