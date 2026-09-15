@@ -33,7 +33,8 @@ macOS预览包由 `python scripts/build_mac.py` 生成，需要同级 `work/mac-
 
 ## 下载与更新
 
-- [Release 安装包](https://github.com/TsungSEU/Lithos/releases)
+- [Release：macOS 预览包](https://github.com/TsungSEU/Lithos/releases)
+- Windows 安装程序与便携包仅本地构建，本次不上传 GitHub；构建方式见上文。
 - [Changelog](CHANGELOG.md)
 
 ## 文档

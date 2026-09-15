@@ -10,7 +10,7 @@
 - 六类沉淀目标预设、离线推荐、Tab采用建议及模型建议；保留自定义编辑并忽略过期响应。
 - 可选GitHub、Google、Apple OAuth入口、浏览器绑定、一次性state、PKCE及Apple身份校验。Windows配置使用DPAPI加密。
 - Apple HTTPS回调桥接示例和接入说明。
-- Windows离线安装包与便携ZIP；macOS Apple Silicon/Intel独立预览启动包。
+- Windows离线安装包与便携ZIP仅本地构建；GitHub Release提供macOS Apple Silicon/Intel独立预览启动包。
 
 ### 保留与改进
 
