@@ -29,6 +29,13 @@ OAuth DPAPI 测试需 Windows。测试不使用真实第三方凭据。
 
 `build_package.py` 构建含 Python 运行时的离线 ZIP，`build_desktop.py` 构建 WebView2 桌面安装程序。构建脚本目前面向 Windows，并依赖仓库同级 `work/package-v2`、`work/desktop-build` 中预先准备的 Python 嵌入运行时、WebView2 SDK/离线安装程序和 Inno Setup；这些二进制不在源码仓库中。桌面构建还需要 Pillow。源码启动不依赖这些构建缓存。
 
+macOS预览包由 `build_mac.py` 生成，需要同级 `work/mac-build` 中的 Python Build Standalone 3.12.14（20260901）Apple Silicon和Intel运行时归档。详情见 [macOS使用说明](macOS使用说明.md)。该包未签名公证、未真机验证，暂不支持OAuth配置；使用系统浏览器打开界面。
+
+## 下载与更新
+
+- [Release 安装包](https://github.com/TsungSEU/Lithos/releases)
+- [Changelog](CHANGELOG.md)
+
 ## 文档
 
 - [工作区使用](工作区界面说明.md)
