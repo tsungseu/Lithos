@@ -70,3 +70,16 @@ graphSVG.addEventListener('pointerdown',e=>{if(e.button!==0)return;graphDrag={x:
 graphSVG.addEventListener('pointermove',e=>{if(!graphDrag)return;const scale=graphSVG.getScreenCTM();if(!scale)return;const dx=(e.clientX-graphDrag.x)/scale.a,dy=(e.clientY-graphDrag.y)/scale.d;if(Math.hypot(dx,dy)>4){graphState.moved=true;graphState.x=graphDrag.originX+dx;graphState.y=graphDrag.originY+dy;graphTransform();}});
 window.addEventListener('pointerup',()=>graphDrag=null);graphSVG.addEventListener('pointerleave',()=>graphDrag=null);
 if(location.hash==='#graph'){showView('library');showGraph(true);}
+
+(() => {
+ const layout=document.querySelector('.graph-layout'),reader=document.querySelector('.graph-reader');
+ const handle=node('div',undefined,'graph-splitter');handle.tabIndex=0;handle.setAttribute('role','separator');handle.setAttribute('aria-label','调整图谱预览宽度');handle.setAttribute('aria-orientation','vertical');handle.setAttribute('aria-valuemin','25');handle.setAttribute('aria-valuemax','75');reader.before(handle);
+ let width=45;try{const stored=Number(localStorage.getItem('lithos.graph-reader-width'));if(stored>=25&&stored<=75)width=stored;}catch(_){}
+ function resize(value){width=Math.max(25,Math.min(75,value));layout.style.setProperty('--reader-width',width+'%');handle.setAttribute('aria-valuenow',String(Math.round(width)));}
+ function save(){try{localStorage.setItem('lithos.graph-reader-width',String(width));}catch(_){}}
+ handle.addEventListener('pointerdown',e=>{if(e.button!==0)return;handle.setPointerCapture(e.pointerId);e.preventDefault();});
+ handle.addEventListener('pointermove',e=>{if(!handle.hasPointerCapture(e.pointerId))return;const box=layout.getBoundingClientRect();resize((box.right-e.clientX)/box.width*100);});
+ handle.addEventListener('pointerup',e=>{if(handle.hasPointerCapture(e.pointerId)){handle.releasePointerCapture(e.pointerId);save();}});
+ handle.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();resize(e.key==='Home'?25:e.key==='End'?75:width+(e.key==='ArrowLeft'?5:-5));save();});
+ const expand=node('button','展开预览','subtle');expand.setAttribute('aria-expanded','false');expand.onclick=()=>{const expanded=layout.classList.toggle('reader-expanded');expand.textContent=expanded?'返回图谱':'展开预览';expand.setAttribute('aria-expanded',String(expanded));};document.querySelector('.graph-controls').append(expand);resize(width);
+})();

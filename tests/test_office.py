@@ -1,7 +1,7 @@
 import io, zipfile, urllib.request, urllib.parse
 from pathlib import Path
 from test_workbench import WorkbenchTests
-import server as app
+from backend import server as app
 
 class OfficeTests(WorkbenchTests):
     def test_office_bytes_and_model_boundary(self):

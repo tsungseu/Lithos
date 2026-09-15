@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-import server
+from backend import server
 
 class FocusTests(unittest.TestCase):
     def test_only_metadata_sent_and_no_draft_written(self):

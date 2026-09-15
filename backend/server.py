@@ -1,6 +1,9 @@
 """Local project-to-knowledge workspace. No filesystem links or secret persistence."""
 import hashlib, io, json, os, re, secrets, threading, time, urllib.error, urllib.parse, urllib.request, zipfile
-import oauth
+try:
+    from . import oauth
+except ImportError:
+    import oauth  # Flat, packaged runtime distribution.
 from functools import lru_cache
 from collections import deque
 from datetime import datetime
@@ -9,6 +12,9 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 BASE = Path(__file__).resolve().parent
+if BASE.name == 'backend': BASE = BASE.parent
+WEB = BASE / 'web' if (BASE / 'web').is_dir() else BASE
+DOCS = BASE / 'docs' if (BASE / 'docs').is_dir() else BASE
 def configuration(base=BASE, environment=None, legacy_root=Path('D:/')):
     env = os.environ if environment is None else environment
     path = base / 'config.json'
@@ -731,8 +737,10 @@ class Handler(BaseHTTPRequestHandler):
             if path.startswith('/oauth/callback/'):
                 oauth.callback(path.rsplit('/',1)[-1], urllib.parse.parse_qs(query), self.headers.get('Cookie',''))
                 return self.reply(200, '<!doctype html><meta charset="utf-8"><title>曜石 · 授权完成</title><h1>登录成功</h1><p>可以关闭此页，返回曜石工作台。账号仅用于本次应用会话，资料不会同步到云端。</p>'.encode(), 'text/html; charset=utf-8')
+            if path in {'/markdown.js','/vendor/marked.umd.js','/vendor/purify.min.js'}:
+                return self.reply(200, (WEB/path[1:]).read_bytes(), 'text/javascript; charset=utf-8')
             if path in {'/brand.svg','/account.js'}:
-                return self.reply(200, (BASE/path[1:]).read_bytes(), 'image/svg+xml' if path.endswith('.svg') else 'text/javascript; charset=utf-8')
+                return self.reply(200, (WEB/path[1:]).read_bytes(), 'image/svg+xml' if path.endswith('.svg') else 'text/javascript; charset=utf-8')
             if path == '/api/state':
                 return self.reply(200, state())
             if path == '/api/settings':
@@ -742,7 +750,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.reply(200, document_bytes(params.get('project',[''])[0], params.get('file',[''])[0]), 'application/octet-stream')
             if path in {'/office-frame.html', '/office-frame.js', '/office.css', '/vendor/jszip.min.js', '/vendor/docx-preview.min.js', '/vendor/xlsx.full.min.js', '/vendor/pdf.min.js', '/vendor/pdf.worker.min.js'}:
                 mime = {'.html':'text/html', '.js':'text/javascript', '.css':'text/css'}[Path(path).suffix]
-                return self.reply(200, (BASE / path[1:]).read_bytes(), mime + '; charset=utf-8')
+                return self.reply(200, ((DOCS if path.endswith('.md') else WEB) / path[1:]).read_bytes(), mime + '; charset=utf-8')
             if path == '/api/graph':
                 return self.reply(200, knowledge_graph(params.get('folder',[''])[0],int(params.get('depth',['3'])[0])))
             if path == '/api/library':
@@ -770,11 +778,11 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/knowledge':
                 return self.reply(200, knowledge(urllib.parse.parse_qs(query).get('q', [''])[0]))
             if path in {'/', '/index.html', '/app', '/app/projects', '/app/knowledge', '/app/guide', '/app/settings'}:
-                html = (BASE / 'index.html').read_text(encoding='utf-8').replace('__TOKEN__', TOKEN)
+                html = (WEB / 'index.html').read_text(encoding='utf-8').replace('__TOKEN__', TOKEN)
                 return self.reply(200, html.encode(), 'text/html; charset=utf-8')
             if path in {'/app.js', '/settings.js', '/graph.js', '/storage.js', '/router.js', '/providers.js', '/shell.js', '/workspace.css', '/style.css', '/使用说明.md'}:
                 mime = 'text/javascript' if path.endswith('.js') else 'text/css' if path.endswith('.css') else 'text/plain'
-                return self.reply(200, (BASE / path[1:]).read_bytes(), mime + '; charset=utf-8')
+                return self.reply(200, ((DOCS if path.endswith('.md') else WEB) / path[1:]).read_bytes(), mime + '; charset=utf-8')
             return self.reply(404, {'error': '未找到'})
         except (ValueError, OSError) as error:
             self.reply(400, {'error': str(error)[:200]})

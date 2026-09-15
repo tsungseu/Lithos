@@ -4,3 +4,4 @@ JSZip 3.10.1 — https://registry.npmjs.org/jszip/-/jszip-3.10.1.tgz — MIT or 
 SheetJS CE xlsx 0.18.5 — https://registry.npmjs.org/xlsx/-/xlsx-0.18.5.tgz — Apache-2.0, xlsx-LICENSE.txt
 PDF.js 3.11.174 — https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-3.11.174.tgz — Apache-2.0, pdfjs-LICENSE.txt
 PDF.js isEvalSupported is disabled. The reader runs in an opaque-origin sandbox with network connections disabled. Office preview is read-only.
+Markdown: marked 18.0.13 (MIT), DOMPurify 3.4.15 (Apache-2.0 OR MPL-2.0); registry.npmjs.org; licenses included.

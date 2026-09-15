@@ -1,7 +1,7 @@
 import json, tempfile, threading, unittest, urllib.request, urllib.error, os
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-import server as app
+from backend import server as app
 
 class Model(BaseHTTPRequestHandler):
     seen = None

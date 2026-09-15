@@ -160,20 +160,6 @@ async function refreshHome() {
  try { const [records, drafts] = await Promise.all([api('/api/knowledge?q='), api('/api/drafts')]); $('stat-knowledge').textContent = records.length; $('stat-drafts').textContent = drafts.filter(d=>!d.published).length; $('home-knowledge').replaceChildren(); records.slice(0, 4).forEach(r => { const b = node('button', r.title, 'knowledge-item'); b.append(node('small', r.category)); b.addEventListener('click', () => { state.knowledgeFolder = ''; renderCategories(); showView('library'); displayKnowledge(r); }); $('home-knowledge').append(b); }); if(!records.length) $('home-knowledge').append(node('p', '知识库正在积累。完成一次项目复盘，就有了第一篇可复用的方法。', 'empty')); } catch(e) { notice(e.message); }
 }
 // Render a deliberately small Markdown subset with DOM nodes only; source HTML is always text.
-function renderMarkdown(container, text) {
- container.replaceChildren(); let code = null, list = null;
- const inline = (el, value) => { const pattern = /(`[^`]+`|\*\*[^*]+\*\*)/g; let previous=0; for(const match of value.matchAll(pattern)) { el.append(document.createTextNode(value.slice(previous,match.index))); el.append(node(match[0].startsWith('`')?'code':'strong', match[0].startsWith('`')?match[0].slice(1,-1):match[0].slice(2,-2))); previous=match.index+match[0].length; } el.append(document.createTextNode(value.slice(previous))); };
- for(const line of String(text || '').replace(/\r\n?/g, '\n').split('\n')) {
-  if(/^\s*```/.test(line)) { if(code) code=null; else { code=node('pre',''); container.append(code); } list=null; continue; }
-  if(code) { code.textContent += line+'\n'; continue; }
-  if(!line.trim()) { list=null; continue; }
-  const heading = line.match(/^(#{1,6})\s+(.+)$/), item=line.match(/^\s*(?:[-*+] |\d+\. )(.+)$/);
-  if(heading) { const e=node('h'+heading[1].length); inline(e,heading[2]); container.append(e); list=null; }
-  else if(/^\s*---+\s*$/.test(line)) {container.append(node('hr')); list=null;}
-  else if(item) { if(!list) {list=node(/^\s*\d/.test(line)?'ol':'ul'); container.append(list);} const e=node('li'); inline(e,item[1]); list.append(e); }
-  else { list=null; const e=node(line.startsWith('> ')?'blockquote':'p'); inline(e,line.replace(/^> /,'')); container.append(e); }
- }
-}
 $('home-new-project').addEventListener('click', () => $('create-dialog').showModal());
 $('home-all-projects').addEventListener('click', () => showView('work'));
 $('home-library').addEventListener('click', () => showView('library'));

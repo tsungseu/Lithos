@@ -2,7 +2,7 @@
 import json, os, socket, subprocess, tempfile, time, urllib.request
 from pathlib import Path
 
-base=Path(__file__).resolve().parent
+base=Path(__file__).resolve().parents[1]
 package=base.parent/'work/desktop-build/payload'
 if len(__import__('sys').argv)>1:package=Path(__import__('sys').argv[1])
 home=base.parent/'work/desktop-qa-home'

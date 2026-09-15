@@ -4,16 +4,17 @@ import hashlib, shutil, subprocess, zipfile
 import build_package
 from PIL import Image, ImageDraw, ImageFont
 
-BASE=Path(__file__).resolve().parent
+BASE=Path(__file__).resolve().parents[1]
 CACHE=BASE.parent/'work/desktop-build'
 PAYLOAD=CACHE/'payload'
 PAYLOAD.mkdir(exist_ok=True)
+if (PAYLOAD/'style.css').is_file(): (PAYLOAD/'style.css').unlink()
 for name in build_package.FILES:
     if name=='启动工作台.cmd':continue
-    shutil.copy2(BASE/name,PAYLOAD/name)
+    shutil.copy2(build_package.source(name),PAYLOAD/name)
 shutil.copytree(build_package.PACKAGE/'runtime',PAYLOAD/'runtime',dirs_exist_ok=True)
-shutil.copytree(BASE/'vendor',PAYLOAD/'vendor',dirs_exist_ok=True)
-shutil.copy2(BASE/'desktop_host.py',PAYLOAD/'desktop_host.py')
+shutil.copytree(BASE/'web/vendor',PAYLOAD/'vendor',dirs_exist_ok=True)
+shutil.copy2(BASE/'desktop/desktop_host.py',PAYLOAD/'desktop_host.py')
 shutil.copy2(BASE/'desktop/安装版使用说明.txt',PAYLOAD/'安装版使用说明.txt')
 shutil.copy2(build_package.PACKAGE/'第三方组件声明.txt',PAYLOAD/'第三方组件声明.txt')
 with zipfile.ZipFile(CACHE/'webview2.nupkg') as z:

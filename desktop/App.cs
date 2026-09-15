@@ -22,12 +22,7 @@ class Workbench : Form {
     Label status = new Label { Text = "正在启动曜石 · Lithos…", Dock = DockStyle.Fill, TextAlign = System.Drawing.ContentAlignment.MiddleCenter };
     public Workbench() {
         Text = "曜石 · Lithos"; Icon=System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath); Width = 1440; Height = 940; MinimumSize = new System.Drawing.Size(1000,700); StartPosition = FormStartPosition.CenterScreen;
-        var menu = new MenuStrip();
-        menu.Items.Add("重新加载", null, (s,e) => {if(view != null && view.CoreWebView2 != null) view.Reload();});
-        menu.Items.Add("浏览器打开", null, (s,e) => {if(address != null) Process.Start(address);});
-        menu.Items.Add("打开应用数据", null, (s,e) => Process.Start("explorer.exe", home));
-        menu.Items.Add("安装与使用说明", null, (s,e) => Process.Start("notepad.exe", "\"" + Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"安装版使用说明.txt") + "\""));
-        Controls.Add(status); Controls.Add(menu); MainMenuStrip=menu;
+        Controls.Add(status);
         Shown += async (s,e) => await Start();
         FormClosed += (s,e) => Stop();
     }
@@ -50,7 +45,7 @@ class Workbench : Form {
             if(!Uri.TryCreate(address,UriKind.Absolute,out uri) || uri.Host!="127.0.0.1" || uri.Scheme!="http") throw new Exception("本机服务未能启动。请检查应用数据中的 config.json；端口可能被占用，可将 port 改为其他空闲端口后重试。");
             if(closing) return;
             view=new WebView2 { Dock=DockStyle.Fill };
-            Controls.Add(view);view.BringToFront();MainMenuStrip.BringToFront();
+            Controls.Add(view);view.BringToFront();
             var env=await CoreWebView2Environment.CreateAsync(null,Path.Combine(home,"browser"));
             await view.EnsureCoreWebView2Async(env);
             if(closing)return;

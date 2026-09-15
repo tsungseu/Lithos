@@ -1,5 +1,8 @@
 import json, urllib.request, webbrowser
-from server import Handler, PORT, ROOT, initialize_workspace, WorkbenchHTTPServer
+try:
+    from backend.server import Handler, PORT, ROOT, initialize_workspace, WorkbenchHTTPServer
+except ModuleNotFoundError:
+    from server import Handler, PORT, ROOT, initialize_workspace, WorkbenchHTTPServer
 
 
 def main():

@@ -1,7 +1,7 @@
 import tempfile,time,unittest
 from pathlib import Path
 from unittest.mock import patch
-import oauth
+from backend import oauth
 
 class OAuthTests(unittest.TestCase):
     def setUp(self):oauth.logout();self.home=Path('unused')

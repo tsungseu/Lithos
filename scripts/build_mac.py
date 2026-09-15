@@ -9,9 +9,9 @@ import stat
 import tarfile
 import zipfile
 from PIL import Image,ImageDraw
-from build_package import FILES
+from build_package import FILES, source as source_file
 
-BASE=Path(__file__).resolve().parent
+BASE=Path(__file__).resolve().parents[1]
 OUT=BASE.parent/'outputs'
 CACHE=BASE.parent/'work/mac-build'
 VERSION='3.2.0'
@@ -31,10 +31,10 @@ def build(arch):
     with zipfile.ZipFile(target,'w') as z:
         for name in FILES:
             if name=='启动工作台.cmd':continue
-            add(z,resources+name,(BASE/name).read_bytes())
-        for p in (BASE/'vendor').iterdir():
+            add(z,resources+name,source_file(name).read_bytes())
+        for p in (BASE/'web/vendor').iterdir():
             if p.is_file():add(z,resources+'vendor/'+p.name,p.read_bytes())
-        add(z,resources+'mac_host.py',(BASE/'mac_host.py').read_bytes())
+        add(z,resources+'mac_host.py',(BASE/'desktop/mac_host.py').read_bytes())
         add(z,prefix+'MacOS/Lithos',b'#!/bin/sh\nHERE="$(CDPATH= cd -- "$(dirname -- "$0")/../Resources" && pwd)"\nexec "$HERE/runtime/bin/python3.12" "$HERE/mac_host.py"\n',0o755)
         add(z,prefix+'Info.plist',plistlib.dumps({'CFBundleName':'Lithos','CFBundleDisplayName':'曜石 · Lithos','CFBundleIdentifier':'local.lithos.workbench','CFBundleVersion':VERSION,'CFBundleShortVersionString':VERSION,'CFBundleExecutable':'Lithos','CFBundlePackageType':'APPL','CFBundleIconFile':'Lithos.icns','LSMinimumSystemVersion':'14.0','NSHighResolutionCapable':True}))
         icon=Image.new('RGBA',(1024,1024));draw=ImageDraw.Draw(icon)
@@ -65,7 +65,7 @@ def build(arch):
             if p.is_file():add(z,resources+'runtime/lib/python3.12/site-packages/'+item.as_posix(),p.read_bytes())
         notice=f'Python standalone source: https://github.com/astral-sh/python-build-standalone/releases/tag/{TAG}\nRuntime archive: {source.name}\nSHA256: {hashlib.sha256(source.read_bytes()).hexdigest()}\nPython and bundled dependency licenses are included in runtime.\npypdf {dist.version}: license included in site-packages metadata.\nOffice dependency licenses: vendor/.\n'
         add(z,resources+'THIRD-PARTY.txt',notice.encode())
-        add(z,'macOS使用说明.md',(BASE/'macOS使用说明.md').read_bytes())
+        add(z,'macOS使用说明.md',(BASE/'docs/macOS使用说明.md').read_bytes())
         add(z,'SHA256SUMS.txt',''.join(f'{digest}  {name}\n' for name,digest in entries.items()).encode())
     with zipfile.ZipFile(target) as z:
         for line in z.read('SHA256SUMS.txt').decode().splitlines():

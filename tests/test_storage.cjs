@@ -1,6 +1,6 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const memory=new Map(),context=vm.createContext({URL,crypto:require('node:crypto').webcrypto,localStorage:{getItem:k=>memory.get(k)||null,setItem:(k,v)=>memory.set(k,v)}});
-vm.runInContext(fs.readFileSync(__dirname+'/storage.js','utf8')+'\nglobalThis.store=WorkbenchStore;',context);const store=context.store;
+vm.runInContext(fs.readFileSync(__dirname+'/../web/storage.js','utf8')+'\nglobalThis.store=WorkbenchStore;',context);const store=context.store;
 memory.set('knowledge-provider',JSON.stringify({endpoint:'http://127.0.0.1:8317/v1',model:'existing-model',key:'local-key'}));
 let data=store.load();assert.equal(data.providers[0].model,'existing-model');assert.equal(data.activeId,'migrated');assert.equal(data.providers[0].apiKey,'local-key');
 data=store.normalize({providers:[{id:'a',name:'Demo',baseUrl:'https://example.org/v1',apiKey:'persist-locally',models:[{modelId:'one',name:'One',contextWindow:128000},'one','two'],model:'missing',effort:'high'}],activeId:'bad'});

@@ -2,7 +2,7 @@
 import hashlib, json, os, re, socket, subprocess, tempfile, time, urllib.request, zipfile
 from pathlib import Path
 
-base=Path(__file__).resolve().parent
+base=Path(__file__).resolve().parents[1]
 archive=base.parent/'outputs/曜石-Lithos-v3.2.0-Windows-x64.zip'
 with tempfile.TemporaryDirectory(prefix='workbench-package-') as temp:
     with zipfile.ZipFile(archive) as z: z.extractall(temp)
@@ -42,7 +42,7 @@ with tempfile.TemporaryDirectory(prefix='workbench-package-') as temp:
         assert api('/api/library-preview?path='+urllib.parse.quote('05_开源项目/示例/资源说明.txt'))['content']=='离线资源检索样例'
         with urllib.request.urlopen(url+'/api/library-download?path='+urllib.parse.quote('05_开源项目/示例/资源说明.txt')) as response:
             assert response.read().decode()=='离线资源检索样例'
-        for asset in ['/office-frame.html','/office-frame.js','/office.css','/vendor/jszip.min.js','/vendor/docx-preview.min.js','/vendor/xlsx.full.min.js','/vendor/pdf.min.js','/vendor/pdf.worker.min.js','/app.js','/style.css','/graph.js','/storage.js','/providers.js','/router.js','/app/settings','/app/projects','/app/knowledge']:
+        for asset in ['/office-frame.html','/office-frame.js','/office.css','/vendor/jszip.min.js','/vendor/docx-preview.min.js','/vendor/xlsx.full.min.js','/vendor/pdf.min.js','/vendor/pdf.worker.min.js','/app.js','/workspace.css','/markdown.js','/vendor/marked.umd.js','/vendor/purify.min.js','/graph.js','/storage.js','/providers.js','/router.js','/app/settings','/app/projects','/app/knowledge']:
             with urllib.request.urlopen(url+asset) as r: assert r.status==200
         project=api('/api/projects',{'area':'03_其他项目','name':'离线验收'})
         source=Path(project['path'])/'03_开发与验证/验证记录.md'
