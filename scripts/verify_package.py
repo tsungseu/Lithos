@@ -39,7 +39,7 @@ with tempfile.TemporaryDirectory(prefix='workbench-package-') as temp:
         assert api('/api/kb/search?q='+urllib.parse.quote('离线知识编辑'))['total']==1
         assert initial['projects']==[] and initial['stats']['knowledge']==0
         assert Path(initial['root']).resolve()==(package/'workspace').resolve()
-        resource=package/'workspace/03_技术知识库/05_开源项目/示例'
+        resource=Path(initial['knowledge_path'])/'05_开源项目/示例'
         resource.mkdir(parents=True)
         (resource/'资源说明.txt').write_text('离线资源检索样例',encoding='utf-8')
         graph=api('/api/graph?folder='+urllib.parse.quote('05_开源项目'))

@@ -38,8 +38,16 @@ def configuration(base=BASE, environment=None, legacy_root=Path('D:/')):
 def config_base():
     return Path(os.environ.get('WORKBENCH_HOME', str(BASE)))
 ROOT, MODE, PORT = configuration(config_base())
+def knowledge_location(root, config):
+    name = config.get('knowledge_name') or ('03_技术知识库' if (root / '03_技术知识库').is_dir() else '技术知识库')
+    parent = Path(config.get('knowledge_parent') or '.').expanduser()
+    if not parent.is_absolute(): parent = root / parent
+    return parent / name
+
+_start_config_path = config_base() / 'config.json'
+_start_config = json.loads(_start_config_path.read_text(encoding='utf-8-sig')) if _start_config_path.exists() else {}
 PROJECTS = ROOT / '05_项目与交付'
-KNOWLEDGE = ROOT / '03_技术知识库'
+KNOWLEDGE = knowledge_location(ROOT, _start_config)
 DATA = Path(os.environ.get('WORKBENCH_DATA', str(config_base() / 'data')))
 TOKEN = secrets.token_urlsafe(32)
 LOCK = threading.RLock()
@@ -118,7 +126,7 @@ def state():
     projects, topics, notes = list_projects(), categories(), knowledge()
     return {'app_id': 'project-knowledge-workbench', 'version': '3.6.1',
             'projects': projects, 'categories': topics, 'phases': PHASES,
-            'root': str(ROOT), 'mode': MODE, 'offline': True,
+            'root': str(ROOT), 'mode': MODE, 'offline': True, 'knowledge_name': KNOWLEDGE.name, 'knowledge_path': str(KNOWLEDGE),
             'stats': {'projects': len(projects), 'knowledge': len(notes),
                       'drafts': sum(not d.get('published') for d in drafts())}}
 
@@ -128,32 +136,58 @@ def settings():
     config = json.loads(path.read_text(encoding='utf-8-sig')) if path.exists() else {}
     return {'root': str(ROOT), 'port': PORT, 'configured_root': config.get('root', str(ROOT)),
             'configured_port': config.get('port', PORT), 'config_path': str(path),
+            'knowledge_parent': config.get('knowledge_parent', '.'),
+            'knowledge_name': config.get('knowledge_name', KNOWLEDGE.name), 'knowledge_path': str(KNOWLEDGE),
             'draft_path': str(DATA), 'version': '3.6.1',
             'environment_override': bool(os.environ.get('WORKBENCH_ROOT') or os.environ.get('WORKBENCH_PORT'))}
 
 
 def save_settings(body):
-    if set(body) != {'root', 'port'}:
-        raise ValueError('仅允许保存资料根目录与端口，不保存密钥')
+    global ROOT, PROJECTS, KNOWLEDGE, MODE, TOKEN, _knowledge_service
+    if not {'root', 'port'} <= set(body) or set(body) - {'root', 'port', 'knowledge_parent', 'knowledge_name'}:
+        raise ValueError('仅允许保存资料目录、知识库位置与端口')
     value = body['root']
     if not isinstance(value, str) or not value.strip():
         raise ValueError('请输入资料根目录')
     root = Path(value.strip()).expanduser()
     root = root if root.is_absolute() else config_base() / root
     root = checked(root, '')
-    if not all(checked(root, folder).is_dir() for folder in ['05_项目与交付', '03_技术知识库']):
-        raise ValueError('请选择包含“05_项目与交付”和“03_技术知识库”的已有父目录；此操作不移动资料')
+    if not root.is_dir():
+        raise ValueError('请选择已有目录作为工作区，无需预建项目或知识库目录')
     port = body['port']
     if type(port) is not int or not 1024 <= port <= 65535:
         raise ValueError('端口须为1024—65535的整数')
     with LOCK:
         path = checked(config_base(), 'config.json')
         config = json.loads(path.read_text(encoding='utf-8-sig')) if path.exists() else {}
-        config.update(root=str(root.absolute()), port=port)
+        name = safe_name(body.get('knowledge_name', config.get('knowledge_name') or ('03_技术知识库' if (root / '03_技术知识库').is_dir() else '技术知识库')))
+        parent = body.get('knowledge_parent', config.get('knowledge_parent', '.'))
+        if not isinstance(parent, str) or not parent.strip():
+            raise ValueError('请输入知识库所在目录，使用 . 表示工作区')
+        parent = parent.strip()
+        if '..' in Path(parent).parts:
+            raise ValueError('请使用完整路径或工作区内相对路径')
+        location = knowledge_location(root, {'knowledge_name': name, 'knowledge_parent': parent})
+        checked(location, '')
+        if location.exists() and not location.is_dir():
+            raise ValueError('知识库目标是文件，请选择目录')
+        projects = (root / '05_项目与交付').resolve()
+        resolved = location.resolve()
+        if resolved == root.resolve() or resolved.is_relative_to(projects) or projects.is_relative_to(resolved):
+            raise ValueError('知识库不能与工作区根目录或项目资料目录重叠')
+        location.mkdir(parents=True, exist_ok=True)
+        config.update(root=str(root.absolute()), port=port, knowledge_name=name, knowledge_parent=parent)
         temporary = checked(config_base(), 'config.pending.json')
         temporary.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding='utf-8')
         os.replace(temporary, path)
-    return {'saved': True, 'restart_required': True, 'root': config['root'], 'port': port}
+        changed = ROOT.resolve() != root.resolve() or KNOWLEDGE.resolve() != location.resolve()
+        ROOT, PROJECTS, KNOWLEDGE, MODE = root.absolute(), root.absolute() / '05_项目与交付', location.absolute(), 'configured'
+        if changed:
+            PREVIEWS.clear()
+            _knowledge_service = None
+            TOKEN = secrets.token_urlsafe(32)
+        initialize_workspace()
+    return {'saved': True, 'restart_required': port != PORT, 'workspace_changed': changed, 'root': str(ROOT), 'port': port, 'active_port': PORT, 'knowledge_path': str(KNOWLEDGE)}
 
 
 def project(pid):
@@ -489,6 +523,8 @@ def publish(body):
             raise ValueError('请保留全部来源编号；无关资料请重新选择后生成')
         for source in draft['sources']:
             original = checked(project(draft['project']), source['relative'])
+            if Path(source['path']).resolve() != original.resolve():
+                raise ValueError('来源项目不属于当前工作区，请切回原工作区或重新选择资料')
             if hashlib.sha256(original.read_bytes()).hexdigest() != source['sha256']:
                 raise ValueError('来源文件已修改，请重新提取和审核后入库')
         folder = checked(KNOWLEDGE, category)
@@ -818,12 +854,17 @@ class Handler(BaseHTTPRequestHandler):
             if not isinstance(body, dict):
                 raise ValueError('请求必须是对象')
             if self.path.startswith('/api/kb/'):
-                return self.reply(200, kb().post(self.path.rsplit('/',1)[-1], body))
+                with LOCK:
+                    if not self.trusted(True): return
+                    return self.reply(200, kb().post(self.path.rsplit('/',1)[-1], body))
             actions = {'/api/focus-suggest': suggest_focus, '/api/model-test': test_model, '/api/settings': save_settings, '/api/projects': create_project, '/api/preview': prepare, '/api/generate': generate, '/api/manual-draft': manual_draft, '/api/publish': publish, '/api/save-draft': save_draft}
             actions.update({'/api/account/config':lambda b:oauth.save_config(config_base(),b), '/api/account/login':lambda b:oauth.start(config_base(),b.get('provider'),f'http://127.0.0.1:{self.server.server_port}'), '/api/account/logout':lambda b:oauth.logout()})
             if self.path not in actions:
                 return self.reply(404, {'error': '未找到'})
-            self.reply(200, actions[self.path](body))
+            with LOCK:
+                if not self.trusted(True): return
+                result = actions[self.path](body)
+            self.reply(200, result)
         except knowledge_service.Conflict as error:
             self.reply(409, {'error': str(error), 'conflict': True})
         except (ValueError, OSError, zipfile.BadZipFile, ElementTree.ParseError) as error:

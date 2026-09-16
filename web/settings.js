@@ -19,13 +19,25 @@ document.querySelectorAll('[data-setting]').forEach(b=>b.addEventListener('click
 }));
 async function loadSettings(){
  renderProviders();
- try{const config=await api('/api/settings');$('settings-root').value=config.configured_root;$('settings-port').value=config.configured_port;$('settings-active-root').textContent=config.root;$('settings-active-port').textContent=config.port;$('settings-config-path').textContent=config.config_path;$('settings-drafts').textContent=config.draft_path;$('settings-version').textContent=config.version;$('settings-address').textContent=location.origin;$('settings-env').textContent=config.environment_override?'启动环境变量正在覆盖配置文件，请调整启动环境后再重启。':'';}catch(e){notice(e.message);}
+ try{const config=await api('/api/settings');$('settings-root').value=config.configured_root;$('settings-knowledge-name').value=config.knowledge_name||'技术知识库';$('settings-knowledge-parent').value=config.knowledge_parent||'.';$('settings-port').value=config.configured_port;$('settings-active-root').textContent=config.root;$('settings-active-port').textContent=config.port;$('settings-config-path').textContent=config.config_path;$('settings-drafts').textContent=config.draft_path;$('settings-version').textContent=config.version;$('settings-address').textContent=location.origin;$('settings-env').textContent=config.environment_override?'启动环境变量正在覆盖配置文件，请调整启动环境后再重启。':'';}catch(e){notice(e.message);}
 }
 document.querySelector('[data-view="settings"]').addEventListener('click',loadSettings);
 $('settings-data-form').addEventListener('submit',e=>{e.preventDefault();busy(e.submitter,async()=>{
- const result=await api('/api/settings',{root:$('settings-root').value,port:Number($('settings-port').value)});
- $('settings-data-status').textContent=`已保存。当前服务与资料位置保持不变；关闭服务窗口后重新启动，访问 http://127.0.0.1:${result.port} 生效。`;
+ const K=window.LithosKnowledge;
+ if(state.generating)throw Error('模型正在生成，请完成后再切换资料目录。');
+ if([...K.ui.docs.values()].some(d=>d.dirty))throw Error('请先保存未保存的笔记，再切换资料目录。');
+ if(state.draft&&!state.draft.published&&$('draft-content').value!==state.draft.content){await api('/api/save-draft',{draft:state.draft.id,content:$('draft-content').value});state.draft.content=$('draft-content').value;}
+ await K.flushForSwitch();
+ try{
+ const result=await api('/api/settings',{root:$('settings-root').value,port:Number($('settings-port').value),knowledge_name:$('settings-knowledge-name').value,knowledge_parent:$('settings-knowledge-parent').value});
+ $('settings-data-status').textContent='目录配置已生效，正在刷新文件列表。'+(result.restart_required?'端口变更将在下次启动生效，当前仍使用原端口。':'');
+ if(result.restart_required)sessionStorage.setItem('lithos-port-note','目录已生效；新端口 '+result.port+' 将在下次启动使用。');
+ location.replace(location.origin+'/app');
+ }catch(e){K.resumeAfterSwitchError();throw e;}
+
 });});
 $('settings-guide').addEventListener('click',()=>showView('guide'));
 renderProviders();
 if(location.pathname==='/app/settings'){showView('settings');loadSettings();}
+
+const portNote=sessionStorage.getItem('lithos-port-note');if(portNote){sessionStorage.removeItem('lithos-port-note');notice(portNote);}

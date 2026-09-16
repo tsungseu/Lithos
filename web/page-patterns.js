@@ -110,6 +110,23 @@
  const providerForm=$('settings-model-form');const back=button('返回供应商列表',()=>$('provider-cancel').click());back.classList.add('obs-back');providerForm.prepend(back);
  const providerMode=()=>{$('setting-models').classList.toggle('obs-provider-edit',!providerForm.hidden);};new MutationObserver(providerMode).observe(providerForm,{attributes:true,attributeFilter:['hidden']});providerMode();
 
+ // Screenshot-aligned category icons and help landing page.
+ const settingsIcons={application:'help',appearance:'settings',interface:'sidebar',editor:'edit',data:'folder',shortcuts:'command',models:'distill',account:'bookmark'};
+ for(const tab of tabs){const icon=C.icon(settingsIcons[tab.dataset.setting]||(tab.textContent.includes('日记')?'daily':'history'));icon.classList.add('settings-category-icon');tab.prepend(icon);}
+ const helpDialog=document.querySelector('.ws-help-modal'),guide=$('guide');
+ const helpLanding=node('section',undefined,'help-landing');
+ const hero=node('div',undefined,'help-brand');const logo=node('img');logo.src='/brand.svg';logo.alt='Lithos';
+ const version=node('p','本地知识工作台','muted');hero.append(logo,node('h1','Lithos'),version);helpLanding.append(hero);
+ const cards=node('div',undefined,'help-resource-card');helpLanding.append(cards);
+ const backToHelp=button('返回帮助中心',()=>{guide.hidden=true;helpLanding.hidden=false;});backToHelp.classList.add('help-back');guide.prepend(backToHelp);
+ const resource=(icon,title,description,label,action)=>{const item=node('div',undefined,'help-resource-row');const mark=C.icon(icon),text=node('div');text.append(node('h2',title),node('p',description,'muted'));item.append(mark,text,button(label,action));cards.append(item);};
+ resource('read','使用指南','了解笔记、链接、搜索和项目知识沉淀的使用方法。','浏览',()=>{helpLanding.hidden=true;guide.hidden=false;guide.scrollTop=0;backToHelp.focus();});
+ const external=url=>{const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.click();};
+ resource('project','项目主页','查看 Lithos 源码、项目说明和开发进展。','浏览',()=>external('https://github.com/tsungseu/Lithos'));
+ resource('help','问题反馈','提交使用问题、Bug 或功能建议。请勿公开密钥及私人资料。','打开',()=>external('https://github.com/tsungseu/Lithos/issues'));
+ resource('history','版本与更新','查看已发布版本及更新说明。','浏览',()=>external('https://github.com/tsungseu/Lithos/releases'));
+ helpDialog.append(helpLanding);guide.hidden=true;
+ new MutationObserver(()=>{if(helpDialog.open){guide.hidden=true;helpLanding.hidden=false;version.textContent='版本 '+($('settings-version').textContent==='—'?'3.6.1':$('settings-version').textContent);}}).observe(helpDialog,{attributes:true,attributeFilter:['open']});
  // Give every small dialog the same Escape/focus-return and heading association.
  let lastFocus=document.activeElement;document.addEventListener('focusin',e=>{if(!e.target.closest('dialog'))lastFocus=e.target;});
  function decorateDialog(dialog){if(dialog.dataset.obsDialog)return;dialog.dataset.obsDialog='true';dialog.addEventListener('close',()=>{if(lastFocus?.isConnected&&!document.querySelector('dialog[open]'))lastFocus.focus();});
