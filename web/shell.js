@@ -12,7 +12,7 @@
  explorer.append(knowledge); document.body.append(explorer);
  const bar=node('div',undefined,'workspace-tabs');bar.setAttribute('aria-label','工作区标签');
  const toggle=node('button','☰','sidebar-toggle');toggle.title='切换侧栏';toggle.setAttribute('aria-label','切换侧栏');toggle.setAttribute('aria-expanded','true');
- toggle.onclick=()=>{if(matchMedia('(max-width:720px)').matches){const open=document.body.classList.toggle('mobile-explorer');toggle.setAttribute('aria-expanded',String(open));}else{const closed=document.body.classList.toggle('sidebar-collapsed');toggle.setAttribute('aria-expanded',String(!closed));}};bar.append(toggle);
+ toggle.onclick=()=>{if(matchMedia('(max-width:900px)').matches){const open=document.body.classList.toggle('mobile-explorer');toggle.setAttribute('aria-expanded',String(open));}else{const closed=document.body.classList.toggle('sidebar-collapsed');toggle.setAttribute('aria-expanded',String(!closed));}};bar.append(toggle);
  const tabs=node('div',undefined,'tab-list');bar.append(tabs);document.body.append(bar);
  const status=node('footer',undefined,'status-bar');status.append(node('span','曜石 · 本地工作区'),node('span','Ctrl + O 快速切换　 ·　 Ctrl + P 命令　 ·　 Ctrl + , 设置'));document.body.append(status);
  document.querySelectorAll('.header .nav').forEach(button=>{const view=button.dataset.view;button.textContent=icons[view];button.title=labels[view];button.setAttribute('aria-label',labels[view]);});
@@ -22,7 +22,7 @@
   for(const name of opened){const item=node('div',undefined,'workspace-tab'+(name===view?' active':''));const open=node('button',labels[name]);open.setAttribute('aria-current',name===view?'page':'false');open.onclick=()=>showView(name);const close=node('button','×','tab-close');close.setAttribute('aria-label','关闭'+labels[name]);close.onclick=()=>{opened.splice(opened.indexOf(name),1);if(name===current)showView(opened.at(-1)||'home');else sync(current);};item.append(open,close);tabs.append(item);}
   projects.hidden=view==='library';knowledge.hidden=view!=='library';document.body.dataset.view=view;
  }
- const previous=showView;showView=function(view){previous(view);sync(view);if(view==='settings')loadSettings();};
+ document.addEventListener('workbench-view',e=>{sync(e.detail);if(e.detail==='settings')loadSettings();});
  window.addEventListener('popstate',()=>sync(Object.keys(viewPaths).find(k=>viewPaths[k]===location.pathname)||'home'));
  sync(Object.keys(viewPaths).find(k=>viewPaths[k]===location.pathname)||'home');
  // The project explorer is useful from every document tab.

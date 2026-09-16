@@ -8,8 +8,8 @@ using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 [assembly: System.Reflection.AssemblyTitle("曜石 · Lithos")]
 [assembly: System.Reflection.AssemblyProduct("Project Knowledge Workbench")]
-[assembly: System.Reflection.AssemblyVersion("3.2.0.0")]
-[assembly: System.Reflection.AssemblyFileVersion("3.2.0.0")]
+[assembly: System.Reflection.AssemblyVersion("3.3.0.0")]
+[assembly: System.Reflection.AssemblyFileVersion("3.3.0.0")]
 
 class Workbench : Form {
     static string testHome;
@@ -80,8 +80,9 @@ class Workbench : Form {
         if(args.Length>0 && args[0]=="--check-runtime") {try{CoreWebView2Environment.GetAvailableBrowserVersionString();return 0;}catch{return 1;}}
         if(args.Length==2 && args[0]=="--smoke-test")testHome=Path.GetFullPath(args[1]);
         bool fresh;
-        using(var single=new Mutex(true,"Local\\ProjectKnowledgeWorkbenchDesktop",out fresh)) {
-            if(!fresh){MessageBox.Show("工作台已打开，请切换到现有窗口。","曜石");return 0;}
+        string mutexName="Local\\ProjectKnowledgeWorkbenchDesktop"+(testHome==null?"":".Test."+testHome.GetHashCode().ToString("X"));
+        using(var single=new Mutex(true,mutexName,out fresh)) {
+            if(!fresh){if(testHome!=null)return 2;MessageBox.Show("工作台已打开，请切换到现有窗口。","曜石");return 0;}
             Application.EnableVisualStyles();Application.SetCompatibleTextRenderingDefault(false);Application.Run(new Workbench());
         }
         return resultCode;
