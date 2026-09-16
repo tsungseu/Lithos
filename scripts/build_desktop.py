@@ -32,7 +32,7 @@ subprocess.run([str(csc),'/nologo','/target:winexe','/platform:x64','/win32icon:
 with (PAYLOAD/'第三方组件声明.txt').open('a',encoding='utf-8') as f:
     f.write('\n桌面版：Microsoft WebView2 SDK 1.0.2903.40；WebView2-LICENSE.txt。\n内含微软签名的WebView2 Evergreen x64离线安装程序，来源https://go.microsoft.com/fwlink/p/?LinkId=2124701。\n安装程序由Inno Setup 6.4.3构建。桌面外壳为本项目实现。\n')
 subprocess.run([str(CACHE/'inno643/ISCC.exe'),'/Qp',str(BASE/'desktop/installer.iss')],check=True)
-installer=BASE.parent/'outputs/曜石-Lithos-v3.5.5-Setup-x64.exe'
+installer=BASE.parent/'outputs/曜石-Lithos-v3.6.1-Setup-x64.exe'
 digest=hashlib.sha256(installer.read_bytes()).hexdigest()
 installer.with_suffix('.sha256.txt').write_text(digest+'  '+installer.name+'\n',encoding='utf-8')
 print('Installer ready:',installer,'SHA256:',digest,flush=True)

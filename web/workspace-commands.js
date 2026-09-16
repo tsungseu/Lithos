@@ -6,7 +6,7 @@
   graph:'M4 5l15 3-8 13z M4 5h.1 M19 8h.1 M11 21h.1', daily:'M4 5h16v16H4z M8 2v6 M16 2v6 M4 10h16 M8 14h3',
   template:'M6 3h9l4 4v14H6z M10 11h5 M10 15h5', command:'M4 6l5 5-5 5 M12 17h8', project:'M3 6h7l2 2h9v12H3z',
   distill:'M9 3h6 M10 3v7l-6 9q-1 2 2 2h12q3 0 2-2l-6-9V3 M8 15h8', help:'M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18 M9 9c0-5 9-3 4 2v3 M12 17h.1',
-  settings:'M4 6h16 M4 12h16 M4 18h16 M8 3v6 M16 9v6 M9 15v6', file:'M6 3h8l4 4v14H6z M14 3v5h4',
+  settings:'M9.5 2h5l.5 2.4 2 1.2 2.3-.8 2.5 4.4-1.8 1.6v2.4l1.8 1.6-2.5 4.4-2.3-.8-2 1.2-.5 2.4h-5L9 20.6l-2-1.2-2.3.8-2.5-4.4L4 14.2v-2.4l-1.8-1.6 2.5-4.4 2.3.8 2-1.2.5-2.4z M15.5 12a3.5 3.5 0 1 0-7 0a3.5 3.5 0 0 0 7 0', file:'M6 3h8l4 4v14H6z M14 3v5h4',
   folder:'M3 6h7l2 2h9v12H3z M12 11v6 M9 14h6', sort:'M4 4v16l-3-3 M4 20l3-3 M10 5h11 M10 11h8 M10 17h5',
   reveal:'M12 3v4 M12 17v4 M3 12h4 M17 12h4 M12 7a5 5 0 1 0 0 10a5 5 0 0 0 0-10', expand:'M6 8l6-5 6 5 M6 16l6 5 6-5',
   bookmark:'M6 3h12v18l-6-4-6 4z', plus:'M12 5v14 M5 12h14', close:'M6 6l12 12 M6 18L18 6',

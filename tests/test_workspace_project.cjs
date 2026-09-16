@@ -10,15 +10,15 @@ const assert=require('node:assert/strict');
   await page.locator('.header [data-command=project]').click();
   await page.waitForFunction(()=>state.projects.some(p=>p.name.includes('界面验收')));
   await page.evaluate(async()=>{const p=state.projects.find(p=>p.name.includes('界面验收'));await chooseProject(p);});
-  await page.getByRole('button',{name:'预览 需求.md',exact:true}).click();
+  await page.locator('.project-file-picker').evaluate(el=>el.open=true);await page.getByRole('button',{name:'预览 需求.md',exact:true}).click();
   await page.locator('.ws-pane.is-active .ws-passive table').waitFor();assert.equal(await page.evaluate(()=>LithosCommands.commands.get('save').enabled()),false);
   if(scale===1.25)await page.locator('.header [data-command=distill]').click();
-  else await page.getByRole('button',{name:'用 AI 沉淀此资料',exact:true}).click();
-  await page.waitForSelector('#work:visible');assert.match(await page.locator('#selection-count').innerText(),/1 份/);
+  else await page.getByRole('button',{name:'加入沉淀材料',exact:true}).click();
+  await page.waitForSelector('#work:visible');assert.match(await page.locator('#selection-count').textContent(),/1 份/);
   assert.equal(await page.locator('#focus').isVisible(),true);assert.equal(await page.locator('#prepare').isEnabled(),true);
   await page.getByRole('button',{name:'预览待发送资料'}).click();await page.waitForFunction(()=>document.querySelector('#preview-content').textContent.includes('离线验收'));assert.match(await page.locator('#preview-content').textContent(),/离线验收/);
   for(const name of ['验收.docx','验收.xlsx']){
-   await page.locator('.header [data-command=project]').click();await page.getByRole('button',{name:'预览 '+name,exact:true}).click();
+   await page.locator('.header [data-command=project]').click();await page.locator('.project-file-picker').evaluate(el=>el.open=true);await page.getByRole('button',{name:'预览 '+name,exact:true}).click();
    const frame=page.frameLocator('.ws-pane.is-active iframe');await frame.getByText(name==='验收.docx'?'项目 Word 验收':'Excel',{exact:true}).waitFor({timeout:20000});
   }
   await page.locator('.header [data-command=settings]').click();await page.locator('[data-setting=models]').click();assert.equal(await page.locator('#setting-models').isVisible(),true);await page.locator('[data-setting=account]').click();assert.equal(await page.locator('#setting-account').isVisible(),true);await page.getByRole('button',{name:'关闭设置'}).click();

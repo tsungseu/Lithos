@@ -1,7 +1,7 @@
-曜石 · Lithos 3.5.5 桌面安装版
+曜石 · Lithos 3.6.1 桌面安装版
 
 安装
-运行“曜石-Lithos-v3.5.5-Setup-x64.exe”，按向导安装。
+运行“曜石-Lithos-v3.6.1-Setup-x64.exe”，按向导安装。
 支持 Windows 10 22H2 / Windows 11 x64。安装包内置 Python、Office 阅读组件以及微软 WebView2 离线安装程序，无需安装 Node 或 Office。
 安装后从开始菜单打开“曜石 · Lithos”，可选创建桌面图标。
 安装包未做商业代码签名，Windows 可能显示发布者未知；请仅使用自己核验来源的安装包。
