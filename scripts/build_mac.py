@@ -14,7 +14,7 @@ from build_package import FILES, source as source_file
 BASE=Path(__file__).resolve().parents[1]
 OUT=BASE.parent/'outputs'
 CACHE=BASE.parent/'work/mac-build'
-VERSION='3.2.0'
+VERSION='3.3.0'
 TAG='20260901'
 
 def build(arch):

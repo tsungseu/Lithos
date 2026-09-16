@@ -39,6 +39,7 @@ macOS预览包由 `python scripts/build_mac.py` 生成，需要同级 `work/mac-
 
 ## 文档
 
+- [知识管理、编辑与恢复](docs/知识管理使用说明.md)
 - [工作区使用](docs/工作区界面说明.md)
 - [项目与知识沉淀](docs/使用说明.md)
 - [离线部署](docs/离线使用与配置.md)

@@ -1,9 +1,11 @@
 """Local project-to-knowledge workspace. No filesystem links or secret persistence."""
 import hashlib, io, json, os, re, secrets, threading, time, urllib.error, urllib.parse, urllib.request, zipfile
+from types import SimpleNamespace
 try:
-    from . import oauth
+    from . import oauth, knowledge as knowledge_service
 except ImportError:
     import oauth  # Flat, packaged runtime distribution.
+    import knowledge as knowledge_service
 from functools import lru_cache
 from collections import deque
 from datetime import datetime
@@ -42,6 +44,17 @@ DATA = Path(os.environ.get('WORKBENCH_DATA', str(config_base() / 'data')))
 TOKEN = secrets.token_urlsafe(32)
 LOCK = threading.RLock()
 PREVIEWS = {}
+_knowledge_service = None
+
+
+def kb():
+    global _knowledge_service
+    with LOCK:
+        if _knowledge_service is None or _knowledge_service.root != KNOWLEDGE.resolve():
+            _knowledge_service = knowledge_service.Knowledge(SimpleNamespace(**{name:globals()[name] for name in ('KNOWLEDGE','DATA','checked','safe_name','library_preview','library_text','library_walk','LIBRARY_SKIP')}))
+            _knowledge_service.scan()
+        return _knowledge_service
+
 PHASES = ['01_计划与需求', '02_方案与设计', '03_开发与验证', '04_问题与改进', '05_交付与验收']
 AREAS = ['01_自动驾驶', '02_机器人', '03_其他项目']
 TOPICS = {
@@ -103,7 +116,7 @@ def initialize_workspace():
 
 def state():
     projects, topics, notes = list_projects(), categories(), knowledge()
-    return {'app_id': 'project-knowledge-workbench', 'version': '3.2.0',
+    return {'app_id': 'project-knowledge-workbench', 'version': '3.3.0',
             'projects': projects, 'categories': topics, 'phases': PHASES,
             'root': str(ROOT), 'mode': MODE, 'offline': True,
             'stats': {'projects': len(projects), 'knowledge': len(notes),
@@ -115,7 +128,7 @@ def settings():
     config = json.loads(path.read_text(encoding='utf-8-sig')) if path.exists() else {}
     return {'root': str(ROOT), 'port': PORT, 'configured_root': config.get('root', str(ROOT)),
             'configured_port': config.get('port', PORT), 'config_path': str(path),
-            'draft_path': str(DATA), 'version': '3.2.0',
+            'draft_path': str(DATA), 'version': '3.3.0',
             'environment_override': bool(os.environ.get('WORKBENCH_ROOT') or os.environ.get('WORKBENCH_PORT'))}
 
 
@@ -746,6 +759,10 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/settings':
                 return self.reply(200, settings())
             params = urllib.parse.parse_qs(query)
+            if path.startswith('/api/kb/'):
+                return self.reply(200, kb().get(path.rsplit('/',1)[-1], params))
+            if path in {'/knowledge-ui.js', '/knowledge-ui.css'}:
+                return self.reply(200, (WEB / path[1:]).read_bytes(), ('text/javascript' if path.endswith('.js') else 'text/css') + '; charset=utf-8')
             if path == '/api/project-file':
                 return self.reply(200, document_bytes(params.get('project',[''])[0], params.get('file',[''])[0]), 'application/octet-stream')
             if path in {'/office-frame.html', '/office-frame.js', '/office.css', '/vendor/jszip.min.js', '/vendor/docx-preview.min.js', '/vendor/xlsx.full.min.js', '/vendor/pdf.min.js', '/vendor/pdf.worker.min.js'}:
@@ -792,16 +809,20 @@ class Handler(BaseHTTPRequestHandler):
             return
         try:
             size = int(self.headers.get('Content-Length', '0'))
-            if not 0 < size <= 1024 * 1024 or not self.headers.get('Content-Type', '').startswith('application/json'):
+            if not 0 < size <= (7 * 1024 * 1024 if self.path.startswith('/api/kb/') else 1024 * 1024) or not self.headers.get('Content-Type', '').startswith('application/json'):
                 raise ValueError('请求格式或大小无效')
             body = json.loads(self.rfile.read(size))
             if not isinstance(body, dict):
                 raise ValueError('请求必须是对象')
+            if self.path.startswith('/api/kb/'):
+                return self.reply(200, kb().post(self.path.rsplit('/',1)[-1], body))
             actions = {'/api/focus-suggest': suggest_focus, '/api/model-test': test_model, '/api/settings': save_settings, '/api/projects': create_project, '/api/preview': prepare, '/api/generate': generate, '/api/manual-draft': manual_draft, '/api/publish': publish, '/api/save-draft': save_draft}
             actions.update({'/api/account/config':lambda b:oauth.save_config(config_base(),b), '/api/account/login':lambda b:oauth.start(config_base(),b.get('provider'),f'http://127.0.0.1:{self.server.server_port}'), '/api/account/logout':lambda b:oauth.logout()})
             if self.path not in actions:
                 return self.reply(404, {'error': '未找到'})
             self.reply(200, actions[self.path](body))
+        except knowledge_service.Conflict as error:
+            self.reply(409, {'error': str(error), 'conflict': True})
         except (ValueError, OSError, zipfile.BadZipFile, ElementTree.ParseError) as error:
             self.reply(400, {'error': str(error)[:220]})
         except Exception:

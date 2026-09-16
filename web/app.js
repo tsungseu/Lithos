@@ -10,7 +10,7 @@ async function api(path, body) {
 }
 function node(tag, text, className) { const el = document.createElement(tag); if (text !== undefined) el.textContent = text; if (className) el.className = className; return el; }
 async function busy(button, fn, text='处理中…') { const previous = button.textContent; button.disabled = true; button.textContent = text; try { await fn(); } catch (e) { notice(e.message); } finally { button.disabled = false; button.textContent = previous; } }
-function showView(name) { document.querySelectorAll('.view').forEach(e => e.hidden = e.id !== name); document.querySelectorAll('.nav').forEach(e => e.classList.toggle('active', e.dataset.view === name)); if (name === 'library') searchKnowledge(); if(name === 'home') refreshHome(); }
+function showView(name) { document.querySelectorAll('.view').forEach(e => e.hidden = e.id !== name); document.querySelectorAll('.nav').forEach(e => e.classList.toggle('active', e.dataset.view === name)); if (name === 'library' && !window.LithosKnowledge) searchKnowledge(); if(name === 'home') refreshHome(); document.dispatchEvent(new CustomEvent('workbench-view',{detail:name})); }
 document.querySelectorAll('.nav').forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
 document.querySelectorAll('.close-dialog').forEach(button => button.addEventListener('click', () => { if (!state.generating) button.closest('dialog').close(); else notice('模型正在处理，请等待返回。'); }));
 $('hide-preview').addEventListener('click',()=>{if(!state.generating)$('preview-dialog').hidden=true;});
@@ -132,6 +132,7 @@ async function searchKnowledge(offset=0) {
  }catch(e){if(request===libraryRequest){$('library-status').textContent='读取失败：'+e.message;notice(e.message);}}
 }
 async function displayKnowledge(record) {
+ if(window.LithosKnowledge) return window.LithosKnowledge.open(record.id || record.path, true);
  const request=++previewRequest;
  $('knowledge-name').textContent=record.title;$('knowledge-path').textContent=record.path;
  const target=$('knowledge-content');target.replaceChildren(node('p','正在读取文件…'));

@@ -51,6 +51,7 @@ async function selectGraphNode(n){
   const b=node('button','展开此目录图谱','secondary');b.addEventListener('click',()=>enterLibrary(n.id==='.'?'':n.id));$('graph-actions').append(b);
  }else{
   const download=node('a','下载原件','secondary');download.href='/api/library-download?path='+encodeURIComponent(n.id);download.setAttribute('download',n.title);$('graph-actions').append(download);
+  const open=node('button','打开为文档标签','secondary');open.onclick=()=>window.LithosKnowledge?.open(n.id,true);$('graph-actions').append(open);
  }
  const related=graphState.edges.filter(e=>e.kind==='reference'&&(e.source===n.id||e.target===n.id));
  $('graph-neighbors').append(node('p',related.length?`关联引用 · ${related.length}`:'当前范围内没有可解析的文档引用。','small muted'));

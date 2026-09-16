@@ -19,7 +19,7 @@ try:
     assert line==f'http://127.0.0.1:{port}',line
     with urllib.request.urlopen(line+'/api/state') as r:state=json.load(r)
     assert Path(state['root']).resolve()==(home/'workspace').resolve()
-    assert state['version']=='3.2.0'
+    assert state['version']=='3.3.0'
 finally:
     process.stdin.close();process.wait(timeout=6)
 assert process.returncode==0

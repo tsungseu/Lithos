@@ -5,10 +5,11 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parents[1]
 OUT = BASE.parent / 'outputs'
 CACHE = BASE.parent / 'work' / 'package-v2'
-PACKAGE = OUT / '曜石-Lithos-v3.2.0-Windows-x64'
+PACKAGE = OUT / '曜石-Lithos-v3.3.0-Windows-x64'
 FILES = ['office-frame.html','office-frame.js','office.css','server.py','launcher.py','index.html','workspace.css','shell.js','markdown.js','app.js','settings.js','graph.js','storage.js','router.js','providers.js','启动工作台.cmd','使用说明.md','离线使用与配置.md','项目记录模板.md']
 
 FILES.extend(['工作区界面说明.md','oauth.py','account.js','brand.svg','OAuth接入说明.md','oauth_apple_bridge.py'])
+FILES.extend(['knowledge.py', 'knowledge-ui.js', 'knowledge-ui.css', '知识管理使用说明.md'])
 
 def source(name):
     for folder in ('web','backend','desktop','docs','scripts',''):
