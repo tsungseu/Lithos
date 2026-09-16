@@ -63,3 +63,36 @@
 .lithos-desktop .ws-pane:last-child .ws-tabs{margin-right:138px}
 .lithos-desktop .ws-tabs:after{content:"";flex:1;min-width:32px;height:100%}
 @media(max-width:900px){.lithos-desktop .ws-pane.is-active .ws-tabs{margin-right:138px}}
+
+/* Project originals and AI stay in the same resizable workspace. */
+.obsidian-pages #work.project-dual .work-grid{display:grid!important;grid-template-columns:minmax(0,var(--project-ratio,60%)) 7px minmax(0,1fr)!important;overflow:hidden;gap:0;min-height:0}
+.project-preview-pane{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
+.project-preview-pane>.section-head,.project-dual .obs-project-context>.section-head{padding:12px 16px;margin:0;border-bottom:1px solid var(--line);flex-shrink:0;flex-wrap:wrap}
+.project-preview-pane h2,.project-dual .obs-project-context h2{font-size:14px}
+.project-file-picker{flex-shrink:0;border-bottom:1px solid var(--line);max-height:35%;overflow:auto}
+.project-file-picker>summary{padding:10px 16px;cursor:pointer;font-size:12px}
+.obsidian-pages .project-file-picker .obs-files{height:auto;max-height:220px;padding:10px 16px;overflow:auto}
+.project-preview-body{flex:1;min-height:0;min-width:0;overflow:auto;display:flex;flex-direction:column}
+.project-preview-body>.ws-passive{flex:1;min-height:0;overflow:auto;padding:16px;display:flex;flex-direction:column}
+.project-preview-body .kb-office{width:100%;flex:1;min-height:320px;border:0}
+.project-preview-body .markdown{overflow-wrap:anywhere;min-width:0}
+.project-pane-splitter{cursor:col-resize;background:var(--line);touch-action:none;min-height:0;z-index:2}
+.project-pane-splitter:hover,.project-pane-splitter:focus-visible{background:var(--accent)}
+.project-resizing{user-select:none}.project-resizing iframe{pointer-events:none}
+.obsidian-pages .project-dual .obs-project-context{overflow:auto;border:0;padding:0 16px;min-width:0;min-height:0}
+.obsidian-pages .project-dual .editor-panel{padding:16px 0;overflow:visible;min-width:0}
+.obsidian-pages .project-dual #draft-content{min-height:300px}
+.project-dual .draft-empty{padding:20px 0}.project-dual .form-row{display:block}
+.project-dual .obs-project-actions{padding:8px 0}.project-dual .project-head{flex-wrap:wrap}
+.obsidian-pages #work.project-dual .work-grid[data-focus=preview],.obsidian-pages #work.project-dual .work-grid[data-focus=ai]{grid-template-columns:minmax(0,1fr)!important}
+.work-grid[data-focus=preview]>.obs-project-context,.work-grid[data-focus=ai]>.project-preview-pane,.work-grid[data-focus=preview]>.project-pane-splitter,.work-grid[data-focus=ai]>.project-pane-splitter{display:none}
+
+.obs-settings-group{font-size:11px;font-weight:600;color:var(--muted);padding:18px 8px 6px}.setting-row>input[type=checkbox]{width:32px;height:18px;flex-shrink:0;accent-color:var(--accent)}.setting-row kbd{white-space:nowrap}.obsidian-pages .settings-tabs button{font-size:13px}.obsidian-pages #guide .page-heading>p{max-width:700px}
+/* Independent help dialog preserves the workspace beneath it. */
+.ws-help-modal{width:min(920px,94vw);height:min(800px,90vh);max-height:90vh;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);overflow:hidden}
+.ws-help-modal[open]{display:flex;flex-direction:column}
+.ws-help-header{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid var(--line);flex-shrink:0}
+.ws-help-header h2{font-size:15px;margin:0}
+.obsidian-pages .ws-help-modal #guide{flex:1;min-height:0;width:100%;max-width:none;margin:0;padding:12px clamp(18px,5vw,50px) 32px;overflow:auto}
+.ws-help-modal #guide>.page-heading{display:none}
+.ws-help-modal::backdrop{background:rgba(0,0,0,.45)}

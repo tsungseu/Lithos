@@ -9,8 +9,8 @@ using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 [assembly: System.Reflection.AssemblyTitle("曜石 · Lithos")]
 [assembly: System.Reflection.AssemblyProduct("Project Knowledge Workbench")]
-[assembly: System.Reflection.AssemblyVersion("3.5.5.0")]
-[assembly: System.Reflection.AssemblyFileVersion("3.5.5.0")]
+[assembly: System.Reflection.AssemblyVersion("3.6.1.0")]
+[assembly: System.Reflection.AssemblyFileVersion("3.6.1.0")]
 
 class Workbench : ChromeForm {
     [DllImport("user32.dll")] static extern bool SetProcessDPIAware();

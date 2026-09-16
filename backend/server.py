@@ -116,7 +116,7 @@ def initialize_workspace():
 
 def state():
     projects, topics, notes = list_projects(), categories(), knowledge()
-    return {'app_id': 'project-knowledge-workbench', 'version': '3.5.5',
+    return {'app_id': 'project-knowledge-workbench', 'version': '3.6.1',
             'projects': projects, 'categories': topics, 'phases': PHASES,
             'root': str(ROOT), 'mode': MODE, 'offline': True,
             'stats': {'projects': len(projects), 'knowledge': len(notes),
@@ -128,7 +128,7 @@ def settings():
     config = json.loads(path.read_text(encoding='utf-8-sig')) if path.exists() else {}
     return {'root': str(ROOT), 'port': PORT, 'configured_root': config.get('root', str(ROOT)),
             'configured_port': config.get('port', PORT), 'config_path': str(path),
-            'draft_path': str(DATA), 'version': '3.5.5',
+            'draft_path': str(DATA), 'version': '3.6.1',
             'environment_override': bool(os.environ.get('WORKBENCH_ROOT') or os.environ.get('WORKBENCH_PORT'))}
 
 
