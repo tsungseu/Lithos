@@ -9,6 +9,7 @@ import sqlite3
 import tempfile
 import threading
 import time
+from datetime import datetime
 from pathlib import Path, PurePosixPath
 from urllib.parse import unquote, urlsplit
 
@@ -171,6 +172,82 @@ class Knowledge:
                 content = self.validate_content(body.get('content'))
                 db.execute('INSERT OR REPLACE INTO recovery VALUES(?,?,?,?)', (relative, content, str(body.get('revision', '')), time.time()))
         return {'ok': True}
+
+    def ensure_folder(self, relative):
+        """Check every ancestor before creating even the first missing directory."""
+        folder = self.path(relative)
+        reason = self.writable(folder / 'note.md')
+        if reason:
+            raise ValueError(reason)
+        folder.mkdir(parents=True, exist_ok=True)
+        return folder
+
+    def create_folder(self, body):
+        with self.lock:
+            parent = self.path(str(body.get('folder', '')))
+            if not parent.is_dir():
+                raise ValueError('请选择已有知识目录')
+            name = self.s.safe_name(body.get('name', ''))
+            folder = self.path((parent / name).relative_to(self.root).as_posix())
+            reason = self.writable(folder / 'note.md')
+            if reason:
+                raise ValueError(reason)
+            folder.mkdir()  # Exclusive; existing names are never merged.
+            return {'path': folder.relative_to(self.root).as_posix()}
+
+    def daily(self, body):
+        with self.lock:
+            folder = self.ensure_folder(str(body.get('folder', '日记')))
+            date = datetime.now().strftime('%Y-%m-%d')
+            relative = (folder / (date + '.md')).relative_to(self.root).as_posix()
+            if self.path(relative).exists():
+                return self.read(relative)
+            try:
+                return self.create({'folder': folder.relative_to(self.root).as_posix(), 'name': date,
+                                    'content': '# ' + date + '\n\n## 工作记录\n\n## 待办\n\n- [ ] \n'})
+            except FileExistsError:
+                return self.read(relative)
+
+    def templates(self, folder):
+        p = self.path(folder)
+        reason = self.writable(p / 'note.md')
+        if reason:
+            raise ValueError(reason)
+        items = []
+        if p.is_dir():
+            for child in sorted(p.iterdir()):
+                if child.suffix.lower() != '.md' or child.name.startswith('.'):
+                    continue
+                try:
+                    relative = child.relative_to(self.root).as_posix()
+                    self.path(relative)
+                    items.append({'path': relative, 'name': child.stem})
+                except (ValueError, OSError):
+                    continue
+        return {'items': items, 'exists': p.is_dir()}
+
+    def browse(self, folder='', sort='name-asc', offset=0):
+        p = self.path(folder)
+        if not p.is_dir():
+            raise ValueError('目录不存在')
+        items, errors = [], []
+        for child in p.iterdir():
+            if child.name.startswith('.') or child.name in self.s.LIBRARY_SKIP:
+                continue
+            try:
+                relative = child.relative_to(self.root).as_posix()
+                self.path(relative)
+                st = child.stat()
+                items.append({'id': relative, 'title': child.name, 'kind': 'directory' if child.is_dir() else 'file',
+                              'modified': st.st_mtime, 'size': st.st_size,
+                              'readonly': self.writable(child / 'note.md') if child.is_dir() else self.writable(child)})
+            except (OSError, ValueError):
+                errors.append(child.name)
+        items.sort(key=lambda item: (item['modified'] if sort.startswith('modified') else item['title'].casefold(), item['title']), reverse=sort.endswith('desc'))
+        items.sort(key=lambda item: item['kind'] != 'directory')
+        offset = max(0, int(offset))
+        return {'items': items[offset:offset+100], 'next_offset': offset+100 if len(items)>offset+100 else None,
+                'total': len(items), 'folder': folder, 'root': str(self.root), 'errors': errors}
 
     def versions(self, path):
         self.path(path)
@@ -336,6 +413,8 @@ class Knowledge:
     def get(self, action, params):
         value = lambda key, default='': params.get(key, [default])[0]
         if action == 'read': return self.read(value('path'))
+        if action == 'browse': return self.browse(value('folder'), value('sort','name-asc'), value('offset','0'))
+        if action == 'templates': return self.templates(value('folder','模板'))
         if action == 'versions': return self.versions(value('path'))
         if action == 'version': return self.version(value('path'), value('id'))
         if action == 'preferences': return self.preferences()
@@ -346,6 +425,8 @@ class Knowledge:
         raise ValueError('未知知识接口')
 
     def post(self, action, body):
-        actions = {'save': self.save, 'create': self.create, 'recovery': self.recover, 'restore': self.restore, 'preferences': self.preferences, 'scan': lambda b: self.scan()}
+        actions = {'save': self.save, 'create': self.create, 'folder': self.create_folder, 'daily': self.daily,
+                   'setup-templates': lambda b: {'path': self.ensure_folder(str(b.get('folder','模板'))).relative_to(self.root).as_posix()},
+                   'recovery': self.recover, 'restore': self.restore, 'preferences': self.preferences, 'scan': lambda b: self.scan()}
         if action not in actions: raise ValueError('未知知识操作')
         return actions[action](body)

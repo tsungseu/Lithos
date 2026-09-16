@@ -84,7 +84,14 @@ function displayDraft(draft) {
  $('published-path').textContent = draft.knowledge_path || '';
  document.querySelectorAll('.steps span').forEach((e,i) => e.classList.toggle('current', i === 2));
 }
-$('save-draft').addEventListener('click', () => busy($('save-draft'), async () => { await api('/api/save-draft', {draft: state.draft.id, content: $('draft-content').value}); state.draft.content = $('draft-content').value; notice('修改已保存到本地草稿。'); }));
+async function saveProjectDraft(){
+ const draft=state.draft;if(!draft||draft.published)return;
+ const content=$('draft-content').value;
+ await api('/api/save-draft',{draft:draft.id,content});
+ if(state.draft===draft)draft.content=content;
+ notice('修改已保存到本地草稿。');
+}
+$('save-draft').addEventListener('click', () => busy($('save-draft'), saveProjectDraft));
 $('publish').addEventListener('click', async () => {
  await busy($('publish'), async () => {
   const result = await api('/api/publish', {draft: state.draft.id, title: $('knowledge-title').value, content: $('draft-content').value, category: $('category').value, reviewed: $('reviewed').checked});
@@ -94,7 +101,7 @@ $('publish').addEventListener('click', async () => {
 });
 $('load-drafts').addEventListener('click', () => busy($('load-drafts'), async () => {
  const drafts = await api('/api/drafts'); $('draft-list').replaceChildren();
- drafts.forEach(draft => { const button = node('button', `${draft.project} · ${draft.published ? '已入库' : '待审核'}`, 'knowledge-item'); button.append(node('small', draft.created.slice(0,16).replace('T',' ') + ' · ' + draft.model)); button.addEventListener('click', async () => { try { if(state.draft && !state.draft.published) await api('/api/save-draft',{draft:state.draft.id,content:$('draft-content').value}); displayDraft(draft); $('drafts-dialog').close(); showView('work'); } catch(e) { notice('当前草稿未保存：'+e.message); } }); $('draft-list').append(button); });
+ drafts.forEach(draft => { const button = node('button', `${draft.project} · ${draft.published ? '已入库' : '待审核'}`, 'knowledge-item'); button.append(node('small', draft.created.slice(0,16).replace('T',' ') + ' · ' + draft.model)); button.addEventListener('click', async () => { try { if(state.draft && !state.draft.published) await api('/api/save-draft',{draft:state.draft.id,content:$('draft-content').value}); displayDraft(draft); $('drafts-dialog').close(); if(window.LithosWorkspace)LithosWorkspace.page('distill');else showView('work'); } catch(e) { notice('当前草稿未保存：'+e.message); } }); $('draft-list').append(button); });
  if (!drafts.length) $('draft-list').append(node('p', '尚无草稿。模型生成成功后会自动保存在本机。', 'empty')); $('drafts-dialog').showModal();
 }));
 let libraryRequest = 0, previewRequest = 0;
@@ -147,7 +154,8 @@ async function displayKnowledge(record) {
 }
 async function renderCategories() {
  try{
-  const listing=await api('/api/library');const root=$('knowledge-categories');root.replaceChildren();
+  if(window.LithosKnowledge)return;
+  const listing=await api('/api/library');const root=$('knowledge-categories');if(!root)return;root.replaceChildren();
   const add=(label,value)=>{const active=value?state.knowledgeFolder===value||state.knowledgeFolder.startsWith(value+'/'):!state.knowledgeFolder;const b=node('button',label,'category-item'+(active?' selected':''));b.addEventListener('click',()=>enterLibrary(value));root.append(b);};
   add('全部目录','');listing.items.filter(x=>x.kind==='directory').forEach(x=>add(x.title,x.id));
  }catch(e){notice(e.message);}

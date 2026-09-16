@@ -19,7 +19,7 @@ try:
     assert line==f'http://127.0.0.1:{port}',line
     with urllib.request.urlopen(line+'/api/state') as r:state=json.load(r)
     assert Path(state['root']).resolve()==(home/'workspace').resolve()
-    assert state['version']=='3.3.0'
+    assert state['version']=='3.5.5'
 finally:
     process.stdin.close();process.wait(timeout=6)
 assert process.returncode==0
@@ -28,7 +28,7 @@ assert (package/'server.py').read_bytes()==before
 # The WinForms harness loads the actual WebView2 control and captures its own surface.
 startup=subprocess.STARTUPINFO();startup.dwFlags|=subprocess.STARTF_USESHOWWINDOW;startup.wShowWindow=0
 native=subprocess.run([str(package/'Workbench.exe'),'--smoke-test',str(home)],cwd=package,timeout=60,startupinfo=startup)
-assert native.returncode==0,(home/'smoke-result.txt').read_text()
-assert (home/'smoke-result.txt').read_text().startswith('PASS')
+assert native.returncode==0,(home/'smoke-result.txt').read_text(encoding='utf-8')
+assert (home/'smoke-result.txt').read_text(encoding='utf-8').startswith('PASS')
 with socket.socket() as s:assert s.connect_ex(('127.0.0.1',port))!=0,'native orphan service'
 print('PASS: external config and workspace; native WebView2 loads actual app; owner exit stops server; install assets unchanged. Screenshot:',home/'desktop-preview.png')
