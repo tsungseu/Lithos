@@ -1,0 +1,16 @@
+const {chromium}=require('playwright');
+const assert=require('node:assert/strict');
+(async()=>{const browser=await chromium.launch({headless:true,executablePath:process.env.LITHOS_BROWSER});const page=await browser.newPage({viewport:{width:1440,height:950}});const base=process.env.LITHOS_TEST_URL;if(!base)throw Error('isolated server required');
+ try{const response=await page.request.get(base+'/app');const token=(await response.text()).match(/name="workbench-token" content="([^"]+)"/)[1];await page.request.post(base+'/api/kb/preferences',{headers:{'X-Workbench-Token':token},data:{}});await page.goto(base+'/app');await page.waitForSelector('.ws-pane');
+ const paths=await page.evaluate(async()=>{const stamp=Date.now();const a=await LithosKnowledge.request('create',{folder:'',name:'Navigation-A-'+stamp});const b=await LithosKnowledge.request('create',{folder:'',name:'Navigation-B-'+stamp});await LithosKnowledge.open(a.id);await LithosKnowledge.open(b.id);return [a.id,b.id];});
+ await page.evaluate(()=>LithosCommands.run('back'));assert.equal(await page.evaluate(()=>LithosWorkspace.active().path),paths[0]);
+ await page.evaluate(()=>LithosCommands.run('forward'));assert.equal(await page.evaluate(()=>LithosWorkspace.active().path),paths[1]);
+ await page.evaluate(()=>LithosCommands.run('split'));assert.equal(await page.locator('.ws-pane').count(),2);
+ await page.locator('.ws-pane.is-active .ws-document-tools').getByRole('button',{name:'阅读 / 编辑',exact:true}).click();const editor=page.getByRole('textbox',{name:'Markdown 编辑器'});await editor.fill('# Shared buffer\n\nUnsaved survives group moves');await page.waitForFunction(()=>document.querySelector('.ws-pane:not(.is-active) article')?.textContent.includes('Shared buffer'));
+ await page.evaluate(()=>LithosCommands.run('move'));assert.equal(await page.evaluate(()=>LithosKnowledge.current().content),'# Shared buffer\n\nUnsaved survives group moves');
+ await page.evaluate(()=>LithosCommands.run('save'));await page.waitForFunction(()=>!LithosKnowledge.current().dirty);
+ await page.evaluate(()=>LithosWorkspace.blank());const source=page.locator('.ws-pane.is-active .ws-tab').filter({has:page.getByRole('tab',{name:/Navigation-B-/})});const target=page.locator('.ws-pane.is-active .ws-tab').first();await source.dragTo(target);
+ assert.equal(await page.locator('.ws-pane.is-active .ws-tab').first().getAttribute('data-id'),'doc:'+paths[1]);
+ await page.keyboard.press('Control+p');await page.getByRole('searchbox',{name:'命令面板',exact:true}).fill('设置');await page.keyboard.press('Enter');await page.waitForSelector('.ws-settings-modal[open]');await page.keyboard.press('Escape');assert.equal(await page.locator('.ws-settings-modal').isVisible(),false);
+ console.log('PASS: preview navigation history, two-group shared buffer, unsaved cross-group move, tab drag order, keyboard palette and modal Escape.');
+ }finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

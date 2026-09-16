@@ -3,7 +3,7 @@ import hashlib, json, os, re, socket, subprocess, tempfile, time, urllib.request
 from pathlib import Path
 
 base=Path(__file__).resolve().parents[1]
-archive=base.parent/'outputs/曜石-Lithos-v3.3.0-Windows-x64.zip'
+archive=base.parent/'outputs/曜石-Lithos-v3.5.5-Windows-x64.zip'
 with tempfile.TemporaryDirectory(prefix='workbench-package-') as temp:
     with zipfile.ZipFile(archive) as z: z.extractall(temp)
     package=next(Path(temp).iterdir())
@@ -31,7 +31,7 @@ with tempfile.TemporaryDirectory(prefix='workbench-package-') as temp:
             req=urllib.request.Request(url+path,data=None if body is None else json.dumps(body).encode(),headers={'Content-Type':'application/json','X-Workbench-Token':token})
             with urllib.request.urlopen(req,timeout=5) as r:return json.load(r)
         initial=api('/api/state')
-        for asset in ['/knowledge-ui.js','/knowledge-ui.css']:
+        for asset in ['/knowledge-ui.js','/knowledge-ui.css','/workspace-shell.js','/workspace-shell.css','/workspace-commands.js','/workspace-navigation.js']:
             with urllib.request.urlopen(url+asset) as r: assert r.status==200
         note=api('/api/kb/create',{'folder':'03_工程实践/开发与部署','name':'知识编辑验收'})
         note=api('/api/kb/save',{'path':note['id'],'revision':note['revision'],'content':'# 离线知识编辑\n\n保存与恢复测试'})

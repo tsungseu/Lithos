@@ -1,44 +1,15 @@
 'use strict';
-// Workspace chrome is independent of document and provider persistence.
+// Shared containers. Workspace behavior lives in workspace-shell.js.
 (() => {
- const logo=document.querySelector('.logo');logo.replaceChildren();const mark=document.createElement('img');mark.src='/brand.svg';mark.alt='曜石';mark.width=28;mark.height=32;logo.append(mark);
- const labels={home:'新标签页',work:'项目空间',library:'知识库',guide:'使用指南',settings:'设置'};
- const icons={home:'⌂',work:'▱',library:'⌘',guide:'?',settings:'⚙'};
- const explorer=node('aside',undefined,'explorer'); explorer.setAttribute('aria-label','文件导航');
- const heading=node('div',undefined,'vault-heading'); heading.append(node('strong','曜石'),node('span','本地知识库')); explorer.append(heading);
- const projects=document.querySelector('.workspace > .sidebar'); explorer.append(projects);
+ const explorer=node('aside',undefined,'explorer');explorer.setAttribute('aria-label','文件导航');
+ explorer.append(document.querySelector('.workspace > .sidebar'));
  const knowledge=node('div',undefined,'knowledge-explorer');
  for(const selector of ['.search-bar','.knowledge-nav','.library-toolbar','#knowledge-results'])knowledge.append(document.querySelector(selector));
- explorer.append(knowledge); document.body.append(explorer);
- const bar=node('div',undefined,'workspace-tabs');bar.setAttribute('aria-label','工作区标签');
- const toggle=node('button','☰','sidebar-toggle');toggle.title='切换侧栏';toggle.setAttribute('aria-label','切换侧栏');toggle.setAttribute('aria-expanded','true');
- toggle.onclick=()=>{if(matchMedia('(max-width:900px)').matches){const open=document.body.classList.toggle('mobile-explorer');toggle.setAttribute('aria-expanded',String(open));}else{const closed=document.body.classList.toggle('sidebar-collapsed');toggle.setAttribute('aria-expanded',String(!closed));}};bar.append(toggle);
- const tabs=node('div',undefined,'tab-list');bar.append(tabs);document.body.append(bar);
- const status=node('footer',undefined,'status-bar');status.append(node('span','曜石 · 本地工作区'),node('span','Ctrl + O 快速切换　 ·　 Ctrl + P 命令　 ·　 Ctrl + , 设置'));document.body.append(status);
- document.querySelectorAll('.header .nav').forEach(button=>{const view=button.dataset.view;button.textContent=icons[view];button.title=labels[view];button.setAttribute('aria-label',labels[view]);});
- const opened=[];let current='home';
- function sync(view){
-  current=view;if(!opened.includes(view))opened.push(view);tabs.replaceChildren();
-  for(const name of opened){const item=node('div',undefined,'workspace-tab'+(name===view?' active':''));const open=node('button',labels[name]);open.setAttribute('aria-current',name===view?'page':'false');open.onclick=()=>showView(name);const close=node('button','×','tab-close');close.setAttribute('aria-label','关闭'+labels[name]);close.onclick=()=>{opened.splice(opened.indexOf(name),1);if(name===current)showView(opened.at(-1)||'home');else sync(current);};item.append(open,close);tabs.append(item);}
-  projects.hidden=view==='library';knowledge.hidden=view!=='library';document.body.dataset.view=view;
- }
- document.addEventListener('workbench-view',e=>{sync(e.detail);if(e.detail==='settings')loadSettings();});
- window.addEventListener('popstate',()=>sync(Object.keys(viewPaths).find(k=>viewPaths[k]===location.pathname)||'home'));
- sync(Object.keys(viewPaths).find(k=>viewPaths[k]===location.pathname)||'home');
- // The project explorer is useful from every document tab.
- $('project-list').addEventListener('click',e=>{if(e.target.closest('.project-item'))showView('work');});
+ explorer.append(knowledge);document.body.append(explorer);
+ const bar=node('div',undefined,'workspace-tabs');bar.append(node('div',undefined,'tab-list'));document.body.append(bar);
+ const status=node('footer',undefined,'status-bar');status.append(node('span','Ctrl+O 快速切换 · Ctrl+P 命令'));document.body.append(status);
  document.querySelector('.home-intro h1').textContent='曜石 · Lithos';
- document.querySelector('.home-intro .muted').textContent='打开项目，阅读资料，记录可复用的知识。';
- document.querySelector('#library .page-heading h1').textContent='知识库';
- document.querySelector('#guide .page-heading h1').textContent='使用指南';
- const switcher=node('dialog',undefined,'quick-switcher');const search=node('input');search.type='search';search.placeholder='输入项目名称或页面名称…';search.setAttribute('aria-label','快速切换');const results=node('div');const exit=node('button','关闭','subtle');exit.onclick=()=>switcher.close();switcher.append(search,results,exit);document.body.append(switcher);
- let commandMode=false;
- const commands=[{label:'项目：新建项目',run:()=>$('new-project').click()},{label:'知识库：打开图谱',run:()=>{showView('library');showGraph(true);}},{label:'工作区：切换侧栏',run:()=>toggle.click()},{label:'设置：模型供应商',run:()=>$('open-model-settings').click()},{label:'项目：手动沉淀',enabled:()=>!!state.project,run:()=>{showView('work');$('manual-draft').click();}}];
- function matches(){results.replaceChildren();const q=search.value.trim().toLowerCase();const choices=commandMode?commands.filter(c=>!c.enabled||c.enabled()):Object.entries(labels).map(([id,label])=>({label,run:()=>showView(id)})).concat(state.projects.map(p=>({label:p.name,run:()=>{showView('work');chooseProject(p);}})));for(const choice of choices.filter(c=>c.label.toLowerCase().includes(q)).slice(0,20)){const b=node('button',choice.label,'switcher-result');b.onclick=()=>{switcher.close();choice.run();};results.append(b);}if(!results.children.length)results.append(node('p','没有匹配项','empty'));}
- function openSwitcher(asCommand){commandMode=asCommand;search.placeholder=asCommand?'输入命令名称…':'输入项目名称或页面名称…';search.setAttribute('aria-label',asCommand?'命令面板':'快速切换');search.value='';matches();if(!switcher.open)switcher.showModal();search.focus();}
- const quick=node('button','⌕','nav');quick.title='快速切换 (Ctrl + O)';quick.setAttribute('aria-label','快速切换');quick.onclick=()=>openSwitcher(false);document.querySelector('.header nav').append(quick);
- search.oninput=matches;search.onkeydown=e=>{if(e.key==='Enter')results.querySelector('button')?.click();};
- document.addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey)||e.altKey)return;if(e.key===','){e.preventDefault();showView('settings');}if(['o','p'].includes(e.key.toLowerCase())){e.preventDefault();openSwitcher(e.key.toLowerCase()==='p');}});
+ document.addEventListener('workbench-view',e=>{document.body.dataset.view=e.detail;});
 })();
 
 // Suggestions remain separate from the editable, authoritative task text.

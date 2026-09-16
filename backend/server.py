@@ -116,7 +116,7 @@ def initialize_workspace():
 
 def state():
     projects, topics, notes = list_projects(), categories(), knowledge()
-    return {'app_id': 'project-knowledge-workbench', 'version': '3.3.0',
+    return {'app_id': 'project-knowledge-workbench', 'version': '3.5.5',
             'projects': projects, 'categories': topics, 'phases': PHASES,
             'root': str(ROOT), 'mode': MODE, 'offline': True,
             'stats': {'projects': len(projects), 'knowledge': len(notes),
@@ -128,7 +128,7 @@ def settings():
     config = json.loads(path.read_text(encoding='utf-8-sig')) if path.exists() else {}
     return {'root': str(ROOT), 'port': PORT, 'configured_root': config.get('root', str(ROOT)),
             'configured_port': config.get('port', PORT), 'config_path': str(path),
-            'draft_path': str(DATA), 'version': '3.3.0',
+            'draft_path': str(DATA), 'version': '3.5.5',
             'environment_override': bool(os.environ.get('WORKBENCH_ROOT') or os.environ.get('WORKBENCH_PORT'))}
 
 
@@ -698,6 +698,9 @@ def library(folder='', query='', offset=0):
 
 
 class WorkbenchHTTPServer(ThreadingHTTPServer):
+    # A browser loads the offline modules concurrently. Windows rejects bursts
+    # when the inherited five-connection listen queue is exhausted.
+    request_queue_size = 128
     # Windows SO_REUSEADDR can allow two live listeners on the same port.
     allow_reuse_address = False
 
@@ -761,7 +764,7 @@ class Handler(BaseHTTPRequestHandler):
             params = urllib.parse.parse_qs(query)
             if path.startswith('/api/kb/'):
                 return self.reply(200, kb().get(path.rsplit('/',1)[-1], params))
-            if path in {'/knowledge-ui.js', '/knowledge-ui.css'}:
+            if path in {'/knowledge-ui.js', '/knowledge-ui.css', '/workspace-shell.js', '/workspace-shell.css', '/workspace-commands.js', '/workspace-navigation.js', '/page-patterns.js', '/page-patterns.css'}:
                 return self.reply(200, (WEB / path[1:]).read_bytes(), ('text/javascript' if path.endswith('.js') else 'text/css') + '; charset=utf-8')
             if path == '/api/project-file':
                 return self.reply(200, document_bytes(params.get('project',[''])[0], params.get('file',[''])[0]), 'application/octet-stream')
