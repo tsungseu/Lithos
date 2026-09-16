@@ -96,3 +96,83 @@
 .obsidian-pages .ws-help-modal #guide{flex:1;min-height:0;width:100%;max-width:none;margin:0;padding:12px clamp(18px,5vw,50px) 32px;overflow:auto}
 .ws-help-modal #guide>.page-heading{display:none}
 .ws-help-modal::backdrop{background:rgba(0,0,0,.45)}
+
+/* Settings and help use the same app-window caption controls. */
+.ws-window-header{height:40px;min-height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 0 0 18px;border-bottom:1px solid var(--line);background:var(--chrome);flex-shrink:0}
+.ws-window-header h2{font-size:13px;margin:0;font-weight:500}
+.ws-window-controls{display:flex;align-items:stretch;height:40px}
+.ws-window-controls .ws-icon{width:44px;border-radius:0;padding:10px}
+.ws-window-controls svg{width:15px;height:15px}
+.ws-window-controls .ws-window-close:hover{background:#c42b1c;color:white}
+.obsidian-pages .ws-settings-modal[open]{display:flex;flex-direction:column}
+.obsidian-pages .ws-settings-modal #settings{height:auto;flex:1;min-height:0;overflow:hidden}
+.obsidian-pages .ws-settings-modal.ws-window-maximized,.ws-help-modal.ws-window-maximized{width:100vw;height:100dvh;max-width:100vw;max-height:100dvh;margin:0;border-radius:0}
+.ws-window-dock{position:fixed;right:16px;bottom:34px;z-index:120;display:flex;gap:8px}
+.ws-window-dock button{background:var(--chrome);border:1px solid var(--line);box-shadow:0 2px 8px #0003;padding:8px 14px}
+.lithos-desktop .ws-settings-modal.ws-window-maximized,.lithos-desktop .ws-help-modal.ws-window-maximized{margin-top:42px;height:calc(100dvh - 42px);max-height:calc(100dvh - 42px)}
+
+/* Obsidian reference: quiet category rail, inset settings cards, branded help. */
+.obsidian-pages .ws-settings-modal{width:min(1180px,96vw);height:min(850px,94vh)}
+.obsidian-pages .ws-settings-modal .settings-layout{grid-template-columns:260px minmax(0,1fr)}
+.obsidian-pages .ws-settings-modal .settings-tabs{padding:16px 14px!important;background:var(--paper)}
+.obsidian-pages .settings-tabs button{border-radius:8px;padding:8px 12px;font-size:14px;line-height:22px}
+.settings-category-icon{width:20px;height:20px;vertical-align:middle;margin-right:10px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.obsidian-pages .settings-tabs>input{font-size:14px;border:2px solid var(--line);border-radius:9px;padding:11px}
+.obs-settings-caption{display:none}.obs-settings-group{font-size:12px;padding-top:25px}
+.obsidian-pages .settings-content{padding:44px 38px;background:var(--paper)}
+.obsidian-pages .ws-settings-modal .setting-panel{border-radius:16px;background:var(--chrome);padding:26px!important}
+.obsidian-pages .setting-row{padding:22px 0}.obsidian-pages .setting-row:last-child{border-bottom:0}
+.obsidian-pages .setting-row h3{font-size:15px}.obsidian-pages .setting-row p{font-size:13px}
+.ws-window-header h2{position:absolute;left:50%;transform:translateX(-50%);pointer-events:none}
+.ws-window-header{justify-content:flex-end}
+.help-landing{overflow:auto;padding:35px clamp(22px,7vw,72px) 50px;min-height:0;flex:1}
+.help-brand{text-align:center;margin:0 0 42px}.help-brand img{height:100px;width:85px}.help-brand h1{font-size:40px;margin:14px 0 6px;letter-spacing:-1px}.help-brand p{font-size:14px;margin:0}
+.help-resource-card{background:var(--chrome);border-radius:16px;padding:0 26px}
+.help-resource-row{display:flex;gap:22px;align-items:center;padding:25px 0;border-bottom:1px solid var(--line)}
+.help-resource-row:last-child{border:0}.help-resource-row>svg{width:44px;height:44px;flex-shrink:0;fill:none;stroke:var(--muted);stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+.help-resource-row>div{flex:1}.help-resource-row h2{font-size:16px;font-weight:500;margin:0 0 6px}.help-resource-row p{font-size:13px;line-height:1.6;margin:0}.help-resource-row button{flex-shrink:0;border:1px solid var(--line);background:var(--hover);padding:8px 15px}
+.help-resource-row:first-child button{background:var(--accent);color:white}.help-back{margin:10px 0}
+@media(max-width:800px){.obsidian-pages .ws-settings-modal .settings-layout{grid-template-columns:170px minmax(0,1fr)}.obsidian-pages .settings-content{padding:22px 14px}.help-resource-card{padding:0 18px}.help-resource-row{gap:14px}.help-resource-row>svg{width:30px;height:30px}}
+.obsidian-pages .ws-help-modal{padding:0!important;width:min(900px,94vw);height:min(920px,94vh);max-height:94vh}
+.obsidian-pages .ws-help-modal .help-brand{margin-bottom:30px}
+.obsidian-pages .ws-help-modal .help-resource-row p{margin:0}
+.obsidian-pages .ws-help-modal .help-resource-row h2{margin:0 0 6px}
+.obsidian-pages .ws-help-modal .help-resource-row{padding:22px 0}
+.obsidian-pages .ws-help-modal.ws-window-maximized{width:100vw;height:100dvh;max-height:100dvh}
+.lithos-desktop .ws-help-modal.ws-window-maximized{height:calc(100dvh - 42px);max-height:calc(100dvh - 42px)}
+.obsidian-pages .settings-facts{font-size:14px;row-gap:0}.obsidian-pages .settings-facts dt,.obsidian-pages .settings-facts dd{padding:18px 0;margin:0;border-bottom:1px solid var(--line)}
+/* Reference proportions in CSS pixels; scale naturally with Windows/WebView DPI. */
+.obsidian-pages .ws-settings-modal{width:min(1090px,96vw);height:min(820px,94dvh);max-height:94dvh}
+.obsidian-pages .ws-settings-modal .settings-layout{grid-template-columns:272px minmax(0,1fr)}
+.obsidian-pages .ws-settings-modal .settings-tabs{padding:12px 14px!important}
+.obsidian-pages .settings-tabs button{font-size:16px;line-height:22px;padding:5px 10px;margin:2px 0}
+.obsidian-pages .settings-tabs>input{font-size:16px;height:42px;padding:8px 12px;margin-bottom:10px}
+.obsidian-pages .obs-settings-group{font-size:14px;padding:22px 10px 10px}
+.obsidian-pages .settings-content{padding:56px 38px 36px}
+.obsidian-pages .ws-settings-modal .setting-panel{padding:24px!important;border-radius:16px}
+.obsidian-pages .setting-panel>h2{font-size:20px;line-height:1.4;margin:0 0 16px}
+.obsidian-pages .setting-row{padding:24px 0;gap:22px}
+.obsidian-pages .setting-row h3{font-size:16px;font-weight:400;line-height:1.4;margin:0 0 4px}
+.obsidian-pages .setting-row p,.obsidian-pages .setting-panel>.muted,.obsidian-pages .setting-info,.obsidian-pages .settings-facts{font-size:14px;line-height:1.55}
+.obsidian-pages .setting-panel label,.obsidian-pages .setting-panel input,.obsidian-pages .setting-panel select,.obsidian-pages .setting-panel button{font-size:15px}
+.obsidian-pages .settings-facts dt,.obsidian-pages .settings-facts dd{padding:20px 0;line-height:1.6}
+.obsidian-pages .ws-window-header{height:36px;min-height:36px}
+.obsidian-pages .ws-window-header h2{font-size:16px;font-weight:600;line-height:36px}
+.obsidian-pages .ws-window-controls{height:36px}.obsidian-pages .ws-window-controls .ws-icon{width:52px;padding:10px}
+.obsidian-pages .ws-help-modal{width:min(720px,94vw);height:min(816px,94dvh);max-height:94dvh}
+.obsidian-pages .help-landing{padding:30px 64px 64px}
+.obsidian-pages .help-brand{margin:0 0 50px}
+.obsidian-pages .help-brand img{width:88px;height:108px}
+.obsidian-pages .help-brand h1{font-size:36px;line-height:1.2;margin:22px 0 8px}
+.obsidian-pages .help-brand p{font-size:16px;line-height:1.5}
+.obsidian-pages .help-resource-card{padding:0 24px;border-radius:16px}
+.obsidian-pages .ws-help-modal .help-resource-row{padding:24px 0;gap:22px;align-items:flex-start}
+.obsidian-pages .help-resource-row>svg{width:52px;height:52px;margin-top:4px}
+.obsidian-pages .ws-help-modal .help-resource-row h2{font-size:16px;line-height:1.4;margin:0 0 3px}
+.obsidian-pages .ws-help-modal .help-resource-row p{font-size:14px;line-height:1.5;margin:0}
+.obsidian-pages .help-resource-row button{font-size:15px;padding:7px 13px;line-height:1.4;margin:0}
+.obsidian-pages .ws-help-modal #guide-text{font-size:16px;line-height:1.75}
+.obsidian-pages .ws-settings-modal.ws-window-maximized,.obsidian-pages .ws-help-modal.ws-window-maximized{width:100vw;height:100dvh;max-height:100dvh}
+.lithos-desktop .ws-settings-modal.ws-window-maximized,.lithos-desktop .ws-help-modal.ws-window-maximized{height:calc(100dvh - 42px);max-height:calc(100dvh - 42px)}
+@media(max-width:800px){.obsidian-pages .ws-settings-modal .settings-layout{grid-template-columns:190px minmax(0,1fr)}.obsidian-pages .settings-content{padding:24px 16px}.obsidian-pages .help-landing{padding:24px 32px 36px}}
+@media(max-width:520px){.obsidian-pages .ws-settings-modal .settings-layout{grid-template-columns:145px minmax(0,1fr)}.obsidian-pages .settings-tabs button{font-size:14px}.settings-category-icon{width:16px;margin-right:6px}.obsidian-pages .help-landing{padding:20px 18px}.obsidian-pages .help-resource-row>svg{width:32px;height:32px}.obsidian-pages .ws-help-modal .help-resource-row{gap:12px;flex-wrap:wrap}.help-resource-row>div{min-width:140px}}

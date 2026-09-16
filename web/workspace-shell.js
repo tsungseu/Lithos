@@ -44,6 +44,24 @@
  let helpFocus;
  function help(){if(helpModal.open)return;helpFocus=document.activeElement;helpView.hidden=false;helpModal.showModal();helpClose.focus();}
  helpModal.addEventListener('close',()=>{if(helpFocus?.isConnected&&helpFocus.getClientRects().length)helpFocus.focus();else stage.querySelector('.ws-tab.active button')?.focus();});
+ // App dialogs share window controls without closing the desktop host.
+ const windowDock=node('div',undefined,'ws-window-dock');windowDock.setAttribute('aria-label','已最小化窗口');document.body.append(windowDock);
+ function windowControls(dialog,label,closeButton,header){
+  const controls=node('div',undefined,'ws-window-controls');
+  const glyph=(button,path)=>{const svg=C.icon('close');svg.firstChild.setAttribute('d',path);button.replaceChildren(svg);};
+  const make=(action,path)=>{const b=node('button',undefined,'ws-icon');b.type='button';b.title=action+label;b.setAttribute('aria-label',action+label);glyph(b,path);return b;};
+  const minimize=make('最小化','M5 12h14'),maximize=make('最大化','M5 5h14v14H5z');
+  const restore=node('button','恢复'+label,'subtle');restore.hidden=true;windowDock.append(restore);
+  minimize.onclick=()=>{restore.hidden=false;dialog.close();};
+  restore.onclick=()=>{restore.hidden=true;dialog.showModal();minimize.focus();};
+  maximize.onclick=()=>{const full=dialog.classList.toggle('ws-window-maximized');maximize.title=(full?'还原':'最大化')+label;maximize.setAttribute('aria-label',maximize.title);glyph(maximize,full?'M8 5h11v11 M5 8h11v11H5z':'M5 5h14v14H5z');};
+  closeButton.className='ws-icon ws-window-close';closeButton.title='关闭'+label;closeButton.setAttribute('aria-label','关闭'+label);glyph(closeButton,'M6 6l12 12 M6 18L18 6');
+  controls.append(minimize,maximize,closeButton);header.append(controls);
+  new MutationObserver(()=>{if(dialog.open)restore.hidden=true;}).observe(dialog,{attributes:true,attributeFilter:['open']});
+ }
+ const settingsHeader=node('div',undefined,'ws-window-header');settingsHeader.append(node('h2','设置'));settingsModal.prepend(settingsHeader);
+ windowControls(settingsModal,'设置',settingsClose,settingsHeader);
+ helpHead.classList.add('ws-window-header');windowControls(helpModal,'使用指南',helpClose,helpHead);
  const originalShowView=showView;
  showView=function(name){if(name==='guide')return help();if(name==='settings')return settings();if(settingsModal.open)settingsModal.close();originalShowView(name);if(!ready||activating||name==='library')return;if(['home','work','guide'].includes(name))page(name);};
  document.addEventListener('workbench-view',e=>{if(e.detail==='settings')settings();});

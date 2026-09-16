@@ -24,7 +24,7 @@ function renderProjects() {
  if (!list.children.length) list.append(node('p', '暂无匹配项目，可点击＋新增。', 'empty'));
 }
 async function refreshProjects(prefer) {
- const data = await api('/api/state'); state.projects = data.projects; state.categories = data.categories; renderCategories(); refreshHome();
+ const data = await api('/api/state'); state.projects = data.projects; state.knowledgeName=data.knowledge_name;const knowledgeTitle=document.querySelector('.ws-knowledge-root>summary');if(knowledgeTitle){knowledgeTitle.textContent=data.knowledge_name||'技术知识库';knowledgeTitle.title=data.knowledge_path||'';document.querySelector('.ws-knowledge-location')?.remove();} state.categories = data.categories; renderCategories(); refreshHome();
  $('category').replaceChildren(...data.categories.map(c => { const option = node('option', c.replace('/', ' / ')); option.value = c; return option; }));
  renderProjects();
  const initial = state.projects.find(p => p.id === prefer) || state.projects.find(p => p.name === '08_数据工程') || state.projects[0];

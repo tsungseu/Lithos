@@ -148,7 +148,7 @@ class WorkbenchTests(unittest.TestCase):
         self.assertEqual(error.exception.code,403)
         request=urllib.request.Request(url+'/api/state',headers={'Host':'evil.example'})
         with self.assertRaises(urllib.error.HTTPError):urllib.request.urlopen(request)
-        with urllib.request.urlopen(url+'/%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md') as r:self.assertIn('新增项目',r.read().decode())
+        with urllib.request.urlopen(url+'/%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md') as r:self.assertIn('从项目资料沉淀知识',r.read().decode())
         with urllib.request.urlopen(url+'/app/settings') as r:self.assertIn('settings-model-form',r.read().decode())
     def test_settings_save_requires_valid_workspace_and_restart(self):
         original_base = app.BASE
@@ -162,10 +162,47 @@ class WorkbenchTests(unittest.TestCase):
             saved=json.loads((app.BASE/'config.json').read_text(encoding='utf-8'))
             self.assertEqual(saved['port'],8768)
             self.assertEqual(app.settings()['configured_port'],8768)
-            for payload in [{'root':str(app.BASE),'port':8768}, {'root':str(app.ROOT),'port':80}, {'root':str(app.ROOT),'port':True}, {'root':str(app.ROOT),'port':8768,'key':'not-allowed'}]:
+            for payload in [{'root':str(app.BASE/'missing-root'),'port':8768}, {'root':str(app.ROOT),'port':80}, {'root':str(app.ROOT),'port':True}, {'root':str(app.ROOT),'port':8768,'key':'not-allowed'}]:
                 with self.assertRaises(ValueError):app.save_settings(payload)
             self.assertEqual(json.loads((app.BASE/'config.json').read_text(encoding='utf-8')),saved)
         finally:app.BASE=original_base
+    def test_custom_knowledge_location_creates_and_preserves_files(self):
+        original_base = app.BASE
+        try:
+            app.BASE = app.ROOT / 'custom-tool'
+            app.BASE.mkdir()
+            root = app.ROOT / 'empty-workspace'
+            root.mkdir()
+            external = app.ROOT / 'external'
+            payload = {'root': str(root), 'port': 8768, 'knowledge_name': '研究笔记', 'knowledge_parent': str(external)}
+            prior_token = app.TOKEN
+            app.PREVIEWS['old-workspace-preview'] = {'expires': 9999999999}
+            result = app.save_settings(payload)
+            self.assertTrue(result['workspace_changed'])
+            self.assertNotEqual(app.TOKEN, prior_token)
+            self.assertNotIn('old-workspace-preview', app.PREVIEWS)
+            location = external / '研究笔记'
+            self.assertTrue(location.is_dir())
+            self.assertEqual(app.KNOWLEDGE, location)
+            self.assertEqual(app.ROOT, root)
+            self.assertEqual(app.kb().root, location.resolve())
+            created = app.kb().post('create', {'folder':'03_工程实践/开发与部署','name':'即时生效验证'})
+            self.assertTrue((location / created['id']).is_file())
+            note = location / '笔记.md'
+            note.write_text('保留内容', encoding='utf-8')
+            app.save_settings(payload)
+            self.assertEqual(note.read_text(encoding='utf-8'), '保留内容')
+            config = json.loads((app.BASE / 'config.json').read_text(encoding='utf-8'))
+            self.assertEqual(app.knowledge_location(root, config), location)
+            self.assertEqual(app.settings()['knowledge_name'], '研究笔记')
+            payload.update(knowledge_parent='资料', knowledge_name='方法')
+            app.save_settings(payload)
+            self.assertTrue((root / '资料' / '方法').is_dir())
+            for changes in [{'knowledge_name':'../escape'}, {'knowledge_parent':'../escape'}, {'knowledge_parent':'.','knowledge_name':'05_项目与交付'}]:
+                with self.assertRaises(ValueError): app.save_settings(dict(payload, **changes))
+        finally:
+            app.BASE = original_base
+
     def test_library_browses_open_source_nested_and_binary(self):
         folder=app.KNOWLEDGE/'05_开源项目/机器人/资源/深层'
         folder.mkdir(parents=True)
