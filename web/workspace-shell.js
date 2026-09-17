@@ -3,7 +3,7 @@
 (() => {
  const K=window.LithosKnowledge,C=window.LithosCommands;
  const workspace={groups:[{id:'left',tabs:[],active:null,history:[],position:-1}],group:'left',closed:[]};
- let ready=false,activating=0,serial=0,renderPending=false;
+ let ready=false,activating=0,serial=0,renderPending=false,pendingPage=null;
  const stage=node('main',undefined,'ws-stage'),parking=node('div',undefined,'ws-parking');parking.hidden=true;
  document.body.append(stage,parking);document.body.classList.add('obsidian-workspace');
  for(const v of document.querySelectorAll('body>.view'))if(v.id!=='settings')parking.append(v);
@@ -11,7 +11,7 @@
  const group=()=>workspace.groups.find(g=>g.id===workspace.group)||workspace.groups[0];
  const active=()=>group().tabs.find(t=>t.id===group().active);
  function persist(){if(!ready)return;const paths=new Map();for(const g of workspace.groups)for(const t of g.tabs)if(t.kind==='document')paths.set(t.path,{path:t.path,pinned:t.pinned});K.ui.tabs=[...paths.values()];K.ui.prefs.workspace=JSON.parse(JSON.stringify(workspace));K.persist();}
- const title=t=>t.kind==='project-document'?t.file.name:t.kind==='document'?(K.ui.docs.get(t.path)?.title||t.path.split('/').pop()):({blank:'新标签页',graph:'关系图谱',work:'项目空间',distill:'知识沉淀',guide:'使用指南',home:'工作区总览'}[t.kind]||'Lithos');
+ const title=t=>t.kind==='project-document'?t.file.name:t.kind==='document'?(K.ui.docs.get(t.path)?.title||t.path.split('/').pop()):({blank:'新标签页',graph:'关系图谱',work:'项目空间',distill:'知识沉淀',guide:'使用指南',memory:'记忆中心',home:'工作区总览'}[t.kind]||'Lithos');
  function changed(){if(renderPending)return;renderPending=true;requestAnimationFrame(()=>{renderPending=false;render();});}
  function addHistory(g,id){g.locations=g.locations||{};const tab=g.tabs.find(t=>t.id===id);if(tab)g.locations[id]={...tab};if(g.history[g.position]===id)return;g.history=g.history.slice(0,g.position+1);g.history.push(id);g.history=g.history.slice(-100);g.position=g.history.length-1;g.locations=Object.fromEntries(Object.entries(g.locations).filter(([key])=>g.history.includes(key)));}
  function recordScroll(){for(const g of workspace.groups){const t=g.tabs.find(t=>t.id===g.active),pane=paneNodes.get(g.id);if(!t||!pane)continue;t.scroll=(pane.querySelector('.kb-reader')||pane.querySelector('.ws-passive')||pane.querySelector('.view'))?.scrollTop||t.scroll||0;}}
@@ -24,7 +24,7 @@
  }
  function openTab(t,pinned=true){const g=group();let target=g.tabs.find(x=>x.id===t.id);if(!target){if(!pinned&&t.kind==='document'){const old=g.tabs.find(x=>x.kind==='document'&&!x.pinned&&!K.ui.docs.get(x.path)?.dirty);if(old)g.tabs.splice(g.tabs.indexOf(old),1);}target={...t,pinned,scroll:0};g.tabs.push(target);}target.pinned=target.pinned||pinned;g.active=target.id;addHistory(g,target.id);changed();persist();return target;}
  function blank(){const t=openTab({id:'blank:'+Date.now()+':'+Math.random().toString(36).slice(2),kind:'blank'});select(t.id);}
- function page(kind){if(kind==='guide')return help();const t=openTab({id:'page:'+kind,kind});return select(t.id);}
+ function page(kind){if(!ready){pendingPage=kind;return;}if(kind==='guide')return help();const t=openTab({id:'page:'+kind,kind});return select(t.id);}
  async function closeTab(id,gid=workspace.group){const g=workspace.groups.find(g=>g.id===gid),t=g?.tabs.find(t=>t.id===id);if(!t)return true;const elsewhere=workspace.groups.some(other=>other!==g&&other.tabs.some(x=>x.id===t.id));if(t.kind==='document'&&!elsewhere){if(!await K.close(t.path))return false;}workspace.closed.unshift({...t});workspace.closed=workspace.closed.slice(0,20);g.tabs=g.tabs.filter(x=>x.id!==id);if(g.active===id)g.active=g.tabs.at(-1)?.id||null;if(!g.tabs.length&&workspace.groups.length>1){workspace.groups=workspace.groups.filter(x=>x!==g);workspace.group=workspace.groups[0].id;}else workspace.group=g.id;if(!group().tabs.length)blank();else await select(group().active);persist();return true;}
  async function closeMany(mode){const g=group(),at=g.tabs.findIndex(t=>t.id===g.active);const list=g.tabs.filter((t,i)=>mode==='right'?i>at:t.id!==g.active).map(t=>t.id);for(const id of list)if(!await closeTab(id,g.id))break;}
  function reopen(){const t=workspace.closed.shift();if(!t)return;openTab(t,true);select(t.id);}
@@ -66,7 +66,8 @@
  showView=function(name){if(name==='guide')return help();if(name==='settings')return settings();if(settingsModal.open)settingsModal.close();originalShowView(name);if(!ready||activating||name==='library')return;if(['home','work','guide'].includes(name))page(name);};
  document.addEventListener('workbench-view',e=>{if(e.detail==='settings')settings();});
  const W=window.LithosWorkspace={blank,page,active,settings,panel:name=>navigation.panel(name),workspace,renderProject:projectReader};
- W.openProject=(project,file)=>{const t=openTab({id:'project:'+project.id+':'+file.id,kind:'project-document',project:{id:project.id,name:project.name,area:project.area,path:project.path},file:{...file},path:file.id},true);return select(t.id);};
+ W.openDocument=(path,pinned=true)=>{const t=openTab({id:'doc:'+path,kind:'document',path},pinned);return select(t.id);};
+ W.openProject=(project,file)=>{const t=openTab({id:'project:'+project.id+':'+file.id,kind:'project-document',project:{id:project.id,name:project.name,area:project.area,path:project.path,source_prefix:project.source_prefix},file:{...file},path:file.id},true);return select(t.id);};
  const navigation=window.installLithosNavigation(W);
  document.querySelector('#project-list').addEventListener('click',e=>{if(e.target.closest('.project-item'))page('work');});
  openOffice=function(file){if(state.project)return W.openProject(state.project,file);};
@@ -183,6 +184,7 @@
  async function initialize(){if(ready)return;const saved=K.ui.prefs.workspace;if(saved?.groups?.length){workspace.groups=saved.groups.slice(0,2).map(g=>({...g,tabs:g.tabs.filter(t=>t.kind!=='guide'&&(t.kind!=='document'||K.ui.docs.has(t.path))),history:g.history||[],position:g.position??-1}));workspace.group=saved.group;workspace.closed=saved.closed||[];}else{workspace.groups[0].tabs=K.ui.tabs.map(t=>({id:'doc:'+t.path,kind:'document',path:t.path,pinned:t.pinned,scroll:K.ui.prefs.scroll[t.path]||0}));workspace.groups[0].active=K.ui.active?'doc:'+K.ui.active:null;}
   for(const g of workspace.groups){if(!g.tabs.some(t=>t.id===g.active))g.active=g.tabs.at(-1)?.id||null;g.history=g.history.filter(id=>id!=='page:guide');if(g.locations)delete g.locations['page:guide'];g.position=Math.min(g.position,g.history.length-1);}workspace.closed=workspace.closed.filter(t=>t.kind!=='guide');
   ready=true;navigation.restore();document.body.classList.toggle('ws-info-hidden',!!K.ui.prefs.infoHidden);document.body.classList.toggle('sidebar-collapsed',!!K.ui.prefs.sidebarCollapsed);const route=Object.entries(viewPaths).find(([,path])=>path===location.pathname)?.[0];if(route==='guide'){if(!group().tabs.length)blank();else await select(group().active);help();}else if(route==='settings'){if(!group().tabs.length)blank();else await select(group().active||group().tabs[0].id);settings();}else if(route&&['work','guide'].includes(route))page(route);else if(group().tabs.length)await select(group().tabs.some(t=>t.id===group().active)?group().active:group().tabs[0].id);else blank();
+  if(pendingPage){const requested=pendingPage;pendingPage=null;await page(requested);}
  }
  window.addEventListener('popstate',()=>{if(!ready)return;const view=Object.entries(viewPaths).find(([,path])=>path===location.pathname)?.[0];if(view==='settings')settings();else if(view==='library'){const target=group().tabs.find(t=>t.kind==='document');if(target)select(target.id);else blank();}else if(view)page(view);});
  document.addEventListener('lithos-ready',initialize);if(K.ready)initialize();

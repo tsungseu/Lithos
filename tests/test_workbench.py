@@ -30,6 +30,44 @@ class WorkbenchTests(unittest.TestCase):
     def tearDown(self): self.tmp.cleanup()
     def preview(self):
         return app.prepare({'project': self.p['id'], 'files': ['03_开发与验证/测试结果.md'], 'focus': '测试结论'})
+    def test_selected_project_directory_is_not_nested(self):
+        self.assertEqual(app.project_location(app.ROOT),app.ROOT)
+        app.ROOT=app.PROJECTS
+        self.assertEqual(app.project_location(app.ROOT),app.ROOT)
+        entries=app.list_projects()
+        self.assertEqual(entries[0]['source_prefix'],self.p['id'])
+        self.assertTrue(app.documents(self.p['id'])['files'])
+        self.assertFalse((app.ROOT/'05_项目与交付').exists())
+
+    def test_arbitrary_source_directory_and_root_files(self):
+        app.ROOT=app.ROOT/'普通资料';app.ROOT.mkdir();app.PROJECTS=app.project_location(app.ROOT)
+        (app.ROOT/'未编号项目').mkdir();(app.ROOT/'未编号项目/需求.md').write_text('需求',encoding='utf-8')
+        (app.ROOT/'说明.md').write_text('说明',encoding='utf-8')
+        app.KNOWLEDGE=app.ROOT/'自定义知识库';app.KNOWLEDGE.mkdir()
+        self.assertEqual({r['id'] for r in app.list_projects()},{'.','未编号项目'})
+        self.assertEqual(app.project('未编号项目'),app.ROOT/'未编号项目')
+        self.assertTrue(app.documents('未编号项目')['files'])
+        with self.assertRaises(ValueError):app.project('自定义知识库')
+
+    def test_single_project_source_directory(self):
+        app.ROOT=Path(self.p['path']);app.PROJECTS=app.project_location(app.ROOT)
+        self.assertEqual([r['id'] for r in app.list_projects()],['.'])
+        self.assertTrue(app.documents('.')['files'])
+
+    def test_save_direct_source_root_takes_effect(self):
+        original_base=app.BASE
+        try:
+            app.BASE=app.ROOT/'test-config';app.BASE.mkdir()
+            chosen=app.PROJECTS
+            result=app.save_settings({'root':str(chosen),'port':app.PORT,'knowledge_name':'沉淀知识','knowledge_parent':str(app.ROOT/'output')})
+            self.assertFalse(result['restart_required'])
+            self.assertEqual(app.PROJECTS,chosen)
+            entry=next(p for p in app.state()['projects'] if p['id']==self.p['id'])
+            self.assertEqual(entry['source_prefix'],self.p['id'])
+            self.assertTrue(app.documents(entry['id'])['files'])
+            self.assertFalse((chosen/'05_项目与交付').exists())
+            self.assertFalse((chosen/'03_其他项目').exists())
+        finally:app.BASE=original_base
     def draft(self):
         preview = self.preview()
         return app.generate({'preview': preview['id'], 'endpoint': f'http://127.0.0.1:{self.model.server_port}/v1', 'model': 'mock-model', 'key': 'test-secret-not-real'})

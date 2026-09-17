@@ -126,7 +126,7 @@
  resource('help','问题反馈','提交使用问题、Bug 或功能建议。请勿公开密钥及私人资料。','打开',()=>external('https://github.com/tsungseu/Lithos/issues'));
  resource('history','版本与更新','查看已发布版本及更新说明。','浏览',()=>external('https://github.com/tsungseu/Lithos/releases'));
  helpDialog.append(helpLanding);guide.hidden=true;
- new MutationObserver(()=>{if(helpDialog.open){guide.hidden=true;helpLanding.hidden=false;version.textContent='版本 '+($('settings-version').textContent==='—'?'3.6.1':$('settings-version').textContent);}}).observe(helpDialog,{attributes:true,attributeFilter:['open']});
+ new MutationObserver(()=>{if(helpDialog.open){guide.hidden=true;helpLanding.hidden=false;version.textContent='版本 '+($('settings-version').textContent==='—'?'3.7.0':$('settings-version').textContent);}}).observe(helpDialog,{attributes:true,attributeFilter:['open']});
  // Give every small dialog the same Escape/focus-return and heading association.
  let lastFocus=document.activeElement;document.addEventListener('focusin',e=>{if(!e.target.closest('dialog'))lastFocus=e.target;});
  function decorateDialog(dialog){if(dialog.dataset.obsDialog)return;dialog.dataset.obsDialog='true';dialog.addEventListener('close',()=>{if(lastFocus?.isConnected&&!document.querySelector('dialog[open]'))lastFocus.focus();});
