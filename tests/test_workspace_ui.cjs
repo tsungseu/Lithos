@@ -10,7 +10,7 @@ const assert=require('node:assert/strict');
  try{
  const bootstrap=await page.request.get(base+'/app');const token=(await bootstrap.text()).match(/name="workbench-token" content="([^"]+)"/)[1];await page.request.post(base+'/api/kb/preferences',{headers:{'X-Workbench-Token':token},data:{}});
   await page.goto(base+'/app');await page.waitForSelector('.ws-pane');
-  assert.deepEqual(await page.locator('.header button').evaluateAll(bs=>bs.map(b=>b.dataset.command)),['sidebar','quick','graph','daily','template','commands','project','distill','help','settings']);
+  assert.deepEqual(await page.locator('.header button').evaluateAll(bs=>bs.map(b=>b.dataset.command)),['sidebar','quick','graph','daily','template','commands','project','distill','memory','help','settings']);
   await page.locator('.header [data-command=daily]').click();
   await page.waitForSelector('.kb-article h1');const daily=await page.evaluate(()=>LithosKnowledge.current().pathId);
   await command('daily');assert.equal(await page.evaluate(()=>LithosKnowledge.current().pathId),daily);

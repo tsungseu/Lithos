@@ -1,0 +1,29 @@
+services:
+  database:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: lithos
+      POSTGRES_USER: lithos
+      POSTGRES_PASSWORD: ${LITHOS_DB_PASSWORD:?set a database password}
+    volumes:
+      - database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lithos"]
+      interval: 5s
+      retries: 10
+  api:
+    build: .
+    ports:
+      - "127.0.0.1:8430:8430"
+    environment:
+      DATABASE_URL: postgresql://lithos:${LITHOS_DB_PASSWORD}@database/lithos
+      LITHOS_BOOTSTRAP_TOKEN: ${LITHOS_BOOTSTRAP_TOKEN:?set a bootstrap token}
+      LITHOS_FILES: /var/lib/lithos
+    volumes:
+      - assets:/var/lib/lithos
+    depends_on:
+      database:
+        condition: service_healthy
+volumes:
+  database:
+  assets:

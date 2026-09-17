@@ -2,10 +2,11 @@
 import hashlib, io, json, os, re, secrets, threading, time, urllib.error, urllib.parse, urllib.request, zipfile
 from types import SimpleNamespace
 try:
-    from . import oauth, knowledge as knowledge_service
+    from . import oauth, knowledge as knowledge_service, memory as memory_service, memory_agents, memory_team
 except ImportError:
     import oauth  # Flat, packaged runtime distribution.
     import knowledge as knowledge_service
+    import memory as memory_service, memory_agents, memory_team
 from functools import lru_cache
 from collections import deque
 from datetime import datetime
@@ -46,13 +47,18 @@ def knowledge_location(root, config):
 
 _start_config_path = config_base() / 'config.json'
 _start_config = json.loads(_start_config_path.read_text(encoding='utf-8-sig')) if _start_config_path.exists() else {}
-PROJECTS = ROOT / '05_项目与交付'
+def project_location(root, mode='configured'):
+    # The selected directory is the source boundary, without inferred children.
+    return root
+
+PROJECTS = project_location(ROOT, MODE)
 KNOWLEDGE = knowledge_location(ROOT, _start_config)
 DATA = Path(os.environ.get('WORKBENCH_DATA', str(config_base() / 'data')))
 TOKEN = secrets.token_urlsafe(32)
 LOCK = threading.RLock()
 PREVIEWS = {}
 _knowledge_service = None
+_memories = {}
 
 
 def kb():
@@ -62,6 +68,18 @@ def kb():
             _knowledge_service = knowledge_service.Knowledge(SimpleNamespace(**{name:globals()[name] for name in ('KNOWLEDGE','DATA','checked','safe_name','library_preview','library_text','library_walk','LIBRARY_SKIP')}))
             _knowledge_service.scan()
         return _knowledge_service
+
+def memory():
+    with LOCK:
+        key = (str(ROOT.resolve()), str(KNOWLEDGE.resolve()))
+        if key not in _memories:
+            snapshot = SimpleNamespace(**{name:globals()[name] for name in ('ROOT','KNOWLEDGE','DATA','checked','safe_name','extract','call_model','oauth','knowledge_service','SimpleNamespace','library_preview','library_text','library_walk','LIBRARY_SKIP')})
+            _memories[key] = memory_service.Memory(snapshot)
+        service = _memories[key]
+        if not getattr(service, 'agents', None): service.agents = memory_agents.Agents(service)
+        if not getattr(service, 'team', None): service.team = memory_team.Team(service)
+        return service
+
 
 PHASES = ['01_计划与需求', '02_方案与设计', '03_开发与验证', '04_问题与改进', '05_交付与验收']
 AREAS = ['01_自动驾驶', '02_机器人', '03_其他项目']
@@ -115,8 +133,9 @@ def initialize_workspace():
     if MODE not in {'configured', 'portable'}:
         return
     checked(ROOT, '').mkdir(parents=True, exist_ok=True)
-    for area in AREAS:
-        checked(PROJECTS, area).mkdir(parents=True, exist_ok=True)
+    if MODE == 'portable':
+        for area in AREAS:
+            checked(PROJECTS, area).mkdir(parents=True, exist_ok=True)
     for area, leaves in TOPICS.items():
         for leaf in leaves:
             checked(KNOWLEDGE, str(Path(area) / leaf)).mkdir(parents=True, exist_ok=True)
@@ -124,7 +143,7 @@ def initialize_workspace():
 
 def state():
     projects, topics, notes = list_projects(), categories(), knowledge()
-    return {'app_id': 'project-knowledge-workbench', 'version': '3.6.1',
+    return {'app_id': 'project-knowledge-workbench', 'version': '3.7.0',
             'projects': projects, 'categories': topics, 'phases': PHASES,
             'root': str(ROOT), 'mode': MODE, 'offline': True, 'knowledge_name': KNOWLEDGE.name, 'knowledge_path': str(KNOWLEDGE),
             'stats': {'projects': len(projects), 'knowledge': len(notes),
@@ -138,7 +157,7 @@ def settings():
             'configured_port': config.get('port', PORT), 'config_path': str(path),
             'knowledge_parent': config.get('knowledge_parent', '.'),
             'knowledge_name': config.get('knowledge_name', KNOWLEDGE.name), 'knowledge_path': str(KNOWLEDGE),
-            'draft_path': str(DATA), 'version': '3.6.1',
+            'draft_path': str(DATA), 'version': '3.7.0',
             'environment_override': bool(os.environ.get('WORKBENCH_ROOT') or os.environ.get('WORKBENCH_PORT'))}
 
 
@@ -171,9 +190,9 @@ def save_settings(body):
         checked(location, '')
         if location.exists() and not location.is_dir():
             raise ValueError('知识库目标是文件，请选择目录')
-        projects = (root / '05_项目与交付').resolve()
+        projects = project_location(root).resolve()
         resolved = location.resolve()
-        if resolved == root.resolve() or resolved.is_relative_to(projects) or projects.is_relative_to(resolved):
+        if resolved == root.resolve() or projects.is_relative_to(resolved) or (projects != root.resolve() and resolved.is_relative_to(projects)) or (parent == '.' and name == '05_项目与交付'):
             raise ValueError('知识库不能与工作区根目录或项目资料目录重叠')
         location.mkdir(parents=True, exist_ok=True)
         config.update(root=str(root.absolute()), port=port, knowledge_name=name, knowledge_parent=parent)
@@ -181,7 +200,7 @@ def save_settings(body):
         temporary.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding='utf-8')
         os.replace(temporary, path)
         changed = ROOT.resolve() != root.resolve() or KNOWLEDGE.resolve() != location.resolve()
-        ROOT, PROJECTS, KNOWLEDGE, MODE = root.absolute(), root.absolute() / '05_项目与交付', location.absolute(), 'configured'
+        ROOT, PROJECTS, KNOWLEDGE, MODE = root.absolute(), project_location(root.absolute()), location.absolute(), 'configured'
         if changed:
             PREVIEWS.clear()
             _knowledge_service = None
@@ -192,21 +211,33 @@ def save_settings(body):
 
 def project(pid):
     p = checked(PROJECTS, pid)
-    if len(Path(pid).parts) != 2 or Path(pid).parts[0] not in AREAS or not p.is_dir():
+    if pid not in {item['id'] for item in list_projects()} or not p.is_dir():
         raise ValueError('项目不存在')
     return p
 
 
 def list_projects():
     result = []
-    for area in AREAS:
-        folder = checked(PROJECTS, area)
-        if not folder.exists():
-            continue
-        for p in sorted(folder.iterdir()):
-            if p.is_dir() and re.match(r'^\d{2,}[-_]', p.name):
-                checked(PROJECTS, str(p.relative_to(PROJECTS)))
-                result.append({'id': p.relative_to(PROJECTS).as_posix(), 'name': p.name, 'area': area, 'path': str(p), 'protected': p.name == '06-DLP开发生产'})
+    def eligible(p):
+        try:
+            checked(PROJECTS, p.relative_to(PROJECTS))
+            return not p.name.startswith('.') and p.name not in SKIP and not p.resolve().is_relative_to(KNOWLEDGE.resolve()) and not p.resolve().is_relative_to(DATA.resolve())
+        except (OSError, ValueError): return False
+    def add(p, area):
+        result.append({'id': p.relative_to(PROJECTS).as_posix(), 'source_prefix': p.relative_to(ROOT).as_posix(), 'name': p.name, 'area': area, 'path': str(p), 'protected': p.name == '06-DLP开发生产'})
+    if not PROJECTS.is_dir(): return result
+    entries = sorted(PROJECTS.iterdir())
+    if any((PROJECTS / phase).is_dir() for phase in PHASES):
+        add(PROJECTS, '03_其他项目')
+        return result
+    if any(p.is_file() and p.suffix.lower() in READABLE and eligible(p) for p in entries): add(PROJECTS, '03_其他项目')
+    for folder in entries:
+        if not folder.is_dir() or not eligible(folder): continue
+        if folder.name in AREAS:
+            for p in sorted(folder.iterdir()):
+                if p.is_dir() and eligible(p): add(p, folder.name)
+            if any(p.is_file() and p.suffix.lower() in READABLE and eligible(p) for p in folder.iterdir()): add(folder, folder.name)
+        else: add(folder, '03_其他项目')
     return result
 
 
@@ -238,6 +269,7 @@ def documents(pid):
     for folder, dirs, files in os.walk(root, followlinks=False):
         rel = Path(folder).relative_to(root)
         dirs[:] = [d for d in sorted(dirs) if d not in SKIP and d.lower() not in CODE_DIRS and not d.startswith('.') and len(rel.parts) < 5]
+        dirs[:] = [d for d in dirs if not (Path(folder)/d).resolve().is_relative_to(KNOWLEDGE.resolve()) and not (Path(folder)/d).resolve().is_relative_to(DATA.resolve())]
         safe_dirs = []
         for d in dirs:
             try:
@@ -405,6 +437,10 @@ def call_model(body, messages, timeout=120):
     payload = {'model': model, 'messages': messages, 'stream': False}
     # OpenAI-compatible services that support reasoning accept this field.
     # "default" omits it so providers without reasoning controls remain compatible.
+    if 'max_tokens' in body:
+        cap = body['max_tokens']
+        if type(cap) is not int or not 1 <= cap <= 8192: raise ValueError('输出预算无效')
+        payload['max_tokens'] = cap
     if effort != 'default':
         payload['reasoning_effort'] = effort
     headers = {'Content-Type': 'application/json'}
@@ -798,9 +834,14 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/settings':
                 return self.reply(200, settings())
             params = urllib.parse.parse_qs(query)
+            if path.startswith('/api/memory/'):
+                service = memory()
+                if path.endswith('/agents'): return self.reply(200, service.agents.grants())
+                if path.endswith('/team-assets'): return self.reply(200, service.team.request('assets?q='+urllib.parse.quote(params.get('q',[''])[0])))
+                return self.reply(200, service.get(path.rsplit('/',1)[-1], params))
             if path.startswith('/api/kb/'):
                 return self.reply(200, kb().get(path.rsplit('/',1)[-1], params))
-            if path in {'/knowledge-ui.js', '/knowledge-ui.css', '/workspace-shell.js', '/workspace-shell.css', '/workspace-commands.js', '/workspace-navigation.js', '/page-patterns.js', '/page-patterns.css'}:
+            if path in {'/knowledge-ui.js', '/knowledge-ui.css', '/workspace-shell.js', '/workspace-shell.css', '/workspace-commands.js', '/workspace-navigation.js', '/page-patterns.js', '/page-patterns.css', '/memory-ui.js', '/memory-ui.css'}:
                 return self.reply(200, (WEB / path[1:]).read_bytes(), ('text/javascript' if path.endswith('.js') else 'text/css') + '; charset=utf-8')
             if path == '/api/project-file':
                 return self.reply(200, document_bytes(params.get('project',[''])[0], params.get('file',[''])[0]), 'application/octet-stream')
@@ -853,6 +894,21 @@ class Handler(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(size))
             if not isinstance(body, dict):
                 raise ValueError('请求必须是对象')
+            if self.path.startswith('/api/memory/'):
+                with LOCK:
+                    if not self.trusted(True): return
+                    service = memory()
+                action = self.path.rsplit('/',1)[-1]
+                if action == 'agent-create': result = service.agents.create(body)
+                elif action == 'agent-revoke': result = service.agents.revoke(body.get('id'))
+                elif action == 'team-login': result = service.team.login(body)
+                elif action == 'team-configure': result = service.team.configure(body)
+                elif action == 'team-preview': result = service.team.preview(body)
+                elif action == 'team-publish': result = service.team.publish(body)
+                elif action == 'team-revoke': result = service.team.request('assets/'+str(body.get('id'))+'/revoke',{})
+                else: result = service.post(action, body)
+                if self.path.endswith('/configure'): service.start()
+                return self.reply(200, result)
             if self.path.startswith('/api/kb/'):
                 with LOCK:
                     if not self.trusted(True): return
@@ -861,9 +917,14 @@ class Handler(BaseHTTPRequestHandler):
             actions.update({'/api/account/config':lambda b:oauth.save_config(config_base(),b), '/api/account/login':lambda b:oauth.start(config_base(),b.get('provider'),f'http://127.0.0.1:{self.server.server_port}'), '/api/account/logout':lambda b:oauth.logout()})
             if self.path not in actions:
                 return self.reply(404, {'error': '未找到'})
-            with LOCK:
-                if not self.trusted(True): return
+            if self.path in {'/api/generate','/api/model-test','/api/focus-suggest'}:
+                with LOCK:
+                    if not self.trusted(True): return
                 result = actions[self.path](body)
+            else:
+                with LOCK:
+                    if not self.trusted(True): return
+                    result = actions[self.path](body)
             self.reply(200, result)
         except knowledge_service.Conflict as error:
             self.reply(409, {'error': str(error), 'conflict': True})
@@ -875,6 +936,7 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     initialize_workspace()
+    memory().start()
     server = WorkbenchHTTPServer(('127.0.0.1', PORT), Handler)
     print(f'Project knowledge workbench: http://127.0.0.1:{PORT}', flush=True)
     server.serve_forever()

@@ -1,7 +1,7 @@
 [Setup]
 AppId={{D7EEFF58-734E-48AB-B2AF-35F39BC45C90}
 AppName=曜石 · Lithos
-AppVersion=3.6.1
+AppVersion=3.7.0
 AppPublisher=项目知识工作台
 DefaultDirName={localappdata}\Programs\ProjectKnowledgeWorkbench
 DefaultGroupName=曜石 · Lithos
@@ -10,7 +10,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0.19045
 OutputDir=..\..\outputs
-OutputBaseFilename=曜石-Lithos-v3.6.1-Setup-x64
+OutputBaseFilename=曜石-Lithos-v3.7.0-Setup-x64
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern

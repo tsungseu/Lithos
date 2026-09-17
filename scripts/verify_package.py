@@ -3,7 +3,7 @@ import hashlib, json, os, re, socket, subprocess, tempfile, time, urllib.request
 from pathlib import Path
 
 base=Path(__file__).resolve().parents[1]
-archive=base.parent/'outputs/曜石-Lithos-v3.6.1-Windows-x64.zip'
+archive=base.parent/'outputs/曜石-Lithos-v3.7.0-Windows-x64.zip'
 with tempfile.TemporaryDirectory(prefix='workbench-package-') as temp:
     with zipfile.ZipFile(archive) as z: z.extractall(temp)
     package=next(Path(temp).iterdir())

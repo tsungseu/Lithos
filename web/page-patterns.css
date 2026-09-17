@@ -176,3 +176,15 @@
 .lithos-desktop .ws-settings-modal.ws-window-maximized,.lithos-desktop .ws-help-modal.ws-window-maximized{height:calc(100dvh - 42px);max-height:calc(100dvh - 42px)}
 @media(max-width:800px){.obsidian-pages .ws-settings-modal .settings-layout{grid-template-columns:190px minmax(0,1fr)}.obsidian-pages .settings-content{padding:24px 16px}.obsidian-pages .help-landing{padding:24px 32px 36px}}
 @media(max-width:520px){.obsidian-pages .ws-settings-modal .settings-layout{grid-template-columns:145px minmax(0,1fr)}.obsidian-pages .settings-tabs button{font-size:14px}.settings-category-icon{width:16px;margin-right:6px}.obsidian-pages .help-landing{padding:20px 18px}.obsidian-pages .help-resource-row>svg{width:32px;height:32px}.obsidian-pages .ws-help-modal .help-resource-row{gap:12px;flex-wrap:wrap}.help-resource-row>div{min-width:140px}}
+
+/* Settings/help follow workspace UI type; the guide follows the document reader. */
+.obsidian-pages :is(.ws-settings-modal,.ws-help-modal){font-family:inherit;font-size:1rem;line-height:1.55}
+.obsidian-pages .ws-settings-modal :is(.settings-tabs button,.settings-tabs>input,.setting-row h3,.setting-panel label,.setting-panel input,.setting-panel select,.setting-panel textarea,.setting-panel button,.provider-card h3),
+.obsidian-pages .ws-help-modal :is(.help-brand p,.help-resource-row button){font-family:inherit;font-size:1rem;line-height:1.55}
+.obsidian-pages .ws-settings-modal :is(.obs-settings-group,.setting-row p,.setting-panel>.muted,.setting-info,.settings-facts,.provider-card p,.provider-model-head),
+.obsidian-pages .ws-help-modal .help-resource-row p{font-size:.923077rem;line-height:1.6}
+.obsidian-pages :is(.ws-settings-modal,.ws-help-modal) .ws-window-header h2{font-family:inherit;font-size:.923077rem;font-weight:500}
+.obsidian-pages .ws-settings-modal .setting-panel>h2{font-size:1.461538rem;line-height:1.4}
+.obsidian-pages .ws-help-modal .help-resource-row h2{font-size:1.076923rem;line-height:1.4}
+.obsidian-pages .ws-help-modal .help-brand h1{font-size:1.846154rem;letter-spacing:normal}
+.obsidian-pages .ws-help-modal #guide-text{font-family:inherit;font-size:16px;line-height:1.85}

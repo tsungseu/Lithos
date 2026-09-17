@@ -1,0 +1,8 @@
+FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY app.py .
+RUN useradd --create-home lithos && mkdir -p /var/lib/lithos && chown lithos /var/lib/lithos
+USER lithos
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8430"]

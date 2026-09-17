@@ -10,9 +10,10 @@ if not config.exists():
     with config.open('x', encoding='utf-8') as f:
         json.dump({'root': root, 'port': 8768}, f, ensure_ascii=False, indent=2)
 
-from server import initialize_workspace, WorkbenchHTTPServer, Handler, PORT
+from server import initialize_workspace, WorkbenchHTTPServer, Handler, PORT, memory
 
 initialize_workspace()
+memory().start()
 http = WorkbenchHTTPServer(('127.0.0.1', PORT), Handler)
 def watch_owner():
     # No shell commands or credentials are accepted on this pipe.
